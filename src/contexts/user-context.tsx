@@ -28,23 +28,28 @@ export function UserProvider({ children }: UserProviderProps): React.JSX.Element
   });
 
   const checkSession = React.useCallback(async (): Promise<void> => {
-    console.log('[UserContext] checkSession: inicio');
     try {
       const data = await checkSessionApi();
-      console.log('[UserContext] checkSession: éxito', data);
       setState((prev) => ({ ...prev, user: data ?? null, error: null, isLoading: false }));
     } catch (err: any) {
-      console.error('[UserContext] checkSession: error', err);
-      logger.error(err);
-      setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
+      // Si el error es 401 (no autenticado), no mostrarlo en consola
+      if (err?.response?.status === 401) {
+        setState((prev) => ({ ...prev, user: null, error: null, isLoading: false }));
+      } else {
+        console.error('[UserContext] checkSession: error', err);
+        logger.error(err);
+        setState((prev) => ({ ...prev, user: null, error: 'Something went wrong', isLoading: false }));
+      }
     }
   }, []);
 
   React.useEffect(() => {
-    console.log('[UserContext] useEffect: ejecutando checkSession');
     checkSession().catch((err) => {
-      console.error('[UserContext] useEffect: error en checkSession', err);
-      logger.error(err);
+      // Solo mostrar en consola si el error NO es 401
+      if (!(err?.response?.status === 401)) {
+        console.error('[UserContext] useEffect: error en checkSession', err);
+        logger.error(err);
+      }
       // noop
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Expected
