@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Obtener la lista de neumáticos
 export const Neumaticos = async () => {
-  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos`);
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos`, { withCredentials: true });
   return response.data;
 };
 

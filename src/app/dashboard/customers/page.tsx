@@ -18,15 +18,14 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 
 import { CustomersFilters } from '@/components/dashboard/customer/customers-filters';
-import { CustomersTable } from '@/components/dashboard/customer/customers-table';
+import { CustomersTable, Customer } from '@/components/dashboard/customer/customers-table';
 import { Neumaticos } from '@/api/Neumaticos';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
-import type { Customer } from '@/components/dashboard/customer/customers-table';
 
 export default function Page(): React.JSX.Element {
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(8);
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [loading, setLoading] = useState(false);
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [resultadoCarga, setResultadoCarga] = useState<any>(null);
@@ -86,22 +85,31 @@ export default function Page(): React.JSX.Element {
   // }, []);
 
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/po-neumaticos/cantidad')
-      .then((res) => res.json())
+    fetch('http://192.168.5.207:3001/api/po-neumaticos/cantidad', { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error('No autorizado');
+        return res.json();
+      })
       .then(({ cantidad }) => setProjectCount(cantidad))
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/po-neumaticos/disponibles/cantidad')
-      .then((res) => res.json())
+    fetch('http://192.168.5.207:3001/api/po-neumaticos/disponibles/cantidad', { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error('No autorizado');
+        return res.json();
+      })
       .then(({ cantidad }) => setDisponiblesCount(cantidad))
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad')
-      .then((res) => res.json())
+    fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad', { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error('No autorizado');
+        return res.json();
+      })
       .then(({ cantidad }) => setAsignadosCount(cantidad))
       .catch(console.error);
   }, []);
@@ -224,13 +232,13 @@ export default function Page(): React.JSX.Element {
       const data = await Neumaticos();
       setCustomers(data);
       // Actualiza los contadores:
-      fetch('http://192.168.5.207:3001/api/po-neumaticos/cantidad')
+      fetch('http://192.168.5.207:3001/api/po-neumaticos/cantidad', { credentials: 'include' })
         .then((res) => res.json())
         .then(({ cantidad }) => setProjectCount(cantidad));
-      fetch('http://192.168.5.207:3001/api/po-neumaticos/disponibles/cantidad')
+      fetch('http://192.168.5.207:3001/api/po-neumaticos/disponibles/cantidad', { credentials: 'include' })
         .then((res) => res.json())
         .then(({ cantidad }) => setDisponiblesCount(cantidad));
-      fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad')
+      fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad', { credentials: 'include' })
         .then((res) => res.json())
         .then(({ cantidad }) => setAsignadosCount(cantidad));
     } catch (error) {

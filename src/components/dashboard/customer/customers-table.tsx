@@ -167,7 +167,7 @@ export function CustomersTable({
           rowsPerPage={rowsPerPage}
           onPageChange={onPageChange}
           onRowsPerPageChange={onRowsPerPageChange}
-          rowsPerPageOptions={[10, 20, 30]}
+          rowsPerPageOptions={[8, 10, 20, 30]}
         />
       </Box>
     </Card>
