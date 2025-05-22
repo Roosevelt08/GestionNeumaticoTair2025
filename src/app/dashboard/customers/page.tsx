@@ -21,8 +21,10 @@ import { CustomersFilters } from '@/components/dashboard/customer/customers-filt
 import { CustomersTable, Customer } from '@/components/dashboard/customer/customers-table';
 import { Neumaticos } from '@/api/Neumaticos';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
+import { useUser } from '@/hooks/use-user';
 
 export default function Page(): React.JSX.Element {
+  const { user } = useUser();
   const [customers, setCustomers] = React.useState<Customer[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
@@ -249,6 +251,9 @@ export default function Page(): React.JSX.Element {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Determinar si el usuario tiene el perfil 002 (JEFE DE TALLER)
+  const esJefeTaller = Array.isArray(user?.perfiles) && user.perfiles.some((p: any) => p.codigo === '002');
+
   return (
     <>
       {loading && (
@@ -297,7 +302,7 @@ export default function Page(): React.JSX.Element {
               color="inherit"
               startIcon={<UploadIcon />}
               onClick={() => inputFileRef.current?.click()}
-              disabled={loading}
+              disabled={loading || esJefeTaller}
             >
               {isMobile ? null : (loading ? "Cargando..." : "Importar")}
             </Button>
@@ -318,6 +323,7 @@ export default function Page(): React.JSX.Element {
             <Button
               startIcon={<PlusIcon fontSize="var(--icon-fontSize-md)" />}
               variant="contained"
+              disabled={esJefeTaller}
             >
               Agregar
             </Button>
