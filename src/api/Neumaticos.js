@@ -56,3 +56,9 @@ export const asignarNeumatico = async (payload) => {
     throw error;
   }
 };
+
+// Obtener la cantidad total de neumáticos
+export const obtenerCantidadNeumaticos = async () => {
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos/cantidad`, { withCredentials: true });
+  return response.data.cantidad;
+};
