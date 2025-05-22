@@ -13,7 +13,7 @@ import { SignOut as SignOutIcon } from '@phosphor-icons/react/dist/ssr/SignOut';
 import { User as UserIcon } from '@phosphor-icons/react/dist/ssr/User';
 
 import { paths } from '@/paths';
-  import { logoutApi } from '@/lib/auth/authApi';
+import { logoutApi } from '@/lib/auth/authApi';
 import { logger } from '@/lib/default-logger';
 import { useUser } from '@/hooks/use-user';
 
@@ -31,13 +31,12 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
   const handleSignOut = React.useCallback(async (): Promise<void> => {
     try {
       await logoutApi();
-      // Refresh the auth state
-      await checkSession?.();
-      router.refresh();
+      // Redirigir al login después de cerrar sesión (forzado en el navegador)
+      window.location.href = '/auth/sign-in';
     } catch (err) {
       logger.error('Sign out error', err);
     }
-  }, [checkSession, router]);
+  }, []);
 
   return (
     <Popover
@@ -71,7 +70,7 @@ export function UserPopover({ anchorEl, onClose, open }: UserPopoverProps): Reac
           <ListItemIcon>
             <SignOutIcon fontSize="var(--icon-fontSize-md)" />
           </ListItemIcon>
-          Sign out
+          Cerrar sesión
         </MenuItem>
       </MenuList>
     </Popover>

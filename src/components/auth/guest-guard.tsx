@@ -47,9 +47,9 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     return null;
   }
 
-  if (error) {
-    return <Alert color="error">{error}</Alert>;
-  }
+  // Mostrar el formulario aunque haya error (por ejemplo, 401/no autenticado)
+  // Solo mostrar el error si quieres mostrar un mensaje específico, o simplemente ignóralo
+  // return error ? <Alert color="error">{error}</Alert> : <>{children}</>;
 
   return <React.Fragment>{children}</React.Fragment>;
 }
