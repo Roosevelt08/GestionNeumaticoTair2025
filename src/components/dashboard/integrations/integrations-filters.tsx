@@ -12,11 +12,13 @@ import Typography from '@mui/material/Typography';
 interface CompaniesFiltersProps {
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   projectName: string;             // ← Nuevo prop para el nombre del proyecto
+  operationName?: string;          // ← Prop opcional para el nombre de la operación
 }
 
 export function CompaniesFilters({
   onSearchChange,
   projectName,                     // ← Lo recibimos aquí
+  operationName,                   // ← Y aquí
 }: CompaniesFiltersProps): React.JSX.Element {
   return (
     <Card sx={{ p: 2 }}>
@@ -44,11 +46,23 @@ export function CompaniesFilters({
             height: 70,
           }}
         />
-
-        {/* Nombre del proyecto */}
         <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
           {projectName}
         </Typography>
+        <Box
+          component="img"
+          src="/assets/operacion.png"
+          alt="Operación"
+          sx={{
+            width: 70,
+            height: 70,
+          }}
+        />
+        {operationName && (
+          <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
+            {operationName}
+          </Typography>
+        )}
       </Stack>
     </Card>
   );

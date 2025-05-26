@@ -57,6 +57,7 @@ export default function Page(): React.JSX.Element {
     COLOR: string;
     ANO: number;
     PROYECTO: string;
+    OPERACION?: string; 
     KILOMETRAJE: number;
   }
 
@@ -250,8 +251,11 @@ export default function Page(): React.JSX.Element {
           <Typography variant="h4">Asignación de Neumáticos</Typography>
         </Stack>
       </Stack>
-      <CompaniesFilters onSearchChange={handleSearchChange}
-        projectName={vehiculo?.PROYECTO || '—'} />
+      <CompaniesFilters 
+        onSearchChange={handleSearchChange}
+        projectName={vehiculo?.PROYECTO || '—'}
+        operationName={vehiculo?.OPERACION?.trim() || ''}
+      />
       <Stack direction="row" spacing={2}>
         <Card sx={{
           flex: 0.8,
