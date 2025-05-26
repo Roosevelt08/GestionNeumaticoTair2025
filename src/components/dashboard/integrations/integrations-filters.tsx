@@ -49,7 +49,7 @@ export function CompaniesFilters({
         />
         <FormControlLabel
           control={<Checkbox onChange={handleCheckboxChange} />}
-          label="Todas las Placas"
+          label="Transito"
         />
         <Box
           component="img"

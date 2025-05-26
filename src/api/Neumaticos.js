@@ -38,6 +38,20 @@ export const buscarVehiculoPorPlaca = async (placa) => {
   }
 };
 
+// Buscar vehículo por placa en toda la empresa (sin filtro de usuario)
+export const buscarVehiculoPorPlacaEmpresa = async (placa) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/vehiculo/buscar-todas/${placa}`, { withCredentials: true });
+    return response.data; // Retorna los datos del vehículo
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return null; // Vehículo no encontrado
+    }
+    console.error("Error al buscar el vehículo por placa (empresa):", error);
+    throw error;
+  }
+};
+
 // Obtener la lista de neumáticos asignados por placa
 export const obtenerNeumaticosAsignadosPorPlaca = async (placa) => {
   try {
