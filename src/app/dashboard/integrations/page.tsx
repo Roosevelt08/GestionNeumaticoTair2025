@@ -217,6 +217,21 @@ export default function Page(): React.JSX.Element {
     setOpenModal(false);
   };
 
+  // Nuevo: manejar selección de vehículo desde el modal de todas las placas
+  const handleVehiculoSeleccionado = (vehiculoSeleccionado: any) => {
+    setVehiculo(vehiculoSeleccionado);
+    setError(null);
+    animateKilometraje(0, vehiculoSeleccionado.KILOMETRAJE);
+    // Cargar solo los neumáticos asignados a la placa seleccionada
+    obtenerNeumaticosAsignadosPorPlaca(vehiculoSeleccionado.PLACA?.trim()).then(setNeumaticosAsignados);
+    // Mostrar en la tabla de disponibles SOLO los neumáticos del usuario autenticado (no filtrar por proyecto externo)
+    Neumaticos().then(listaNeumaticos => {
+      setNeumaticos(listaNeumaticos);
+      setNeumaticosFiltrados(listaNeumaticos); // Mostrar todos los disponibles del usuario
+      animateTotalNeumaticos(0, listaNeumaticos.length);
+    });
+  };
+
   useEffect(() => {
     // Sólo disparar cuando tengamos un objeto de vehículo válido
     if (!vehiculo || !vehiculo.PLACA) return;
@@ -259,6 +274,7 @@ export default function Page(): React.JSX.Element {
         projectName={vehiculo?.PROYECTO || '—'}
         operationName={vehiculo?.OPERACION?.trim() || '—'}
         autosDisponiblesCount={autosDisponiblesCount}
+        onVehiculoSeleccionado={handleVehiculoSeleccionado}
       />
       <Stack direction="row" spacing={2}>
         <Card sx={{
@@ -292,7 +308,7 @@ export default function Page(): React.JSX.Element {
                   {/* Ícono de neumáticos */}
                   <Box
                     sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={() => setOpenModal(true)} // Solo abre el modal
+                    onClick={() => setOpenModal(true)} 
                   >
                     <img
                       src="/assets/tires-icon.png"

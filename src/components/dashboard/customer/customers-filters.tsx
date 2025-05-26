@@ -214,7 +214,7 @@ export function CustomersFilters({
             {displayAutosDisponibles}
           </Box>
           <Typography align="center" variant="body2" color="text.secondary">
-            Autos Disponibles 
+            Vehiculos Disponibles 
           </Typography>
         </Grid>
       </Grid>

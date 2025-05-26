@@ -24,7 +24,7 @@ const ModalAvertAsigNeu: React.FC<ModalAvertAsigNeuProps> = ({ open, onClose, on
     const handleClose = () => {
         onClose();
         setTimeout(() => {
-            document.body.focus(); // Libera el foco manualmente
+            document.body.focus(); 
         }, 0);
     };
     

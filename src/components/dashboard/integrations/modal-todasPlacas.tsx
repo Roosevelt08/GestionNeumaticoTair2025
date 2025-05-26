@@ -10,9 +10,10 @@ import { buscarVehiculoPorPlacaEmpresa } from '@/api/Neumaticos';
 interface ModalTodasPlacasProps {
     open: boolean;
     onClose: () => void;
+    onVehiculoSeleccionado?: (vehiculo: any) => void;
 }
 
-const ModalTodasPlacas: React.FC<ModalTodasPlacasProps> = ({ open, onClose }) => {
+const ModalTodasPlacas: React.FC<ModalTodasPlacasProps> = ({ open, onClose, onVehiculoSeleccionado }) => {
     const [busqueda, setBusqueda] = React.useState('');
     const [vehiculo, setVehiculo] = React.useState<any | null>(null);
     const [loading, setLoading] = React.useState(false);
@@ -131,7 +132,14 @@ const ModalTodasPlacas: React.FC<ModalTodasPlacasProps> = ({ open, onClose }) =>
                                         </TableRow>
                                     )}
                                     {vehiculo && !loading && !error && (
-                                        <TableRow>
+                                        <TableRow
+                                            hover
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={() => {
+                                                if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
+                                                onClose();
+                                            }}
+                                        >
                                             <TableCell>{vehiculo.MARCA}</TableCell>
                                             <TableCell>{vehiculo.MODELO}</TableCell>
                                             <TableCell>{vehiculo.TIPO}</TableCell>

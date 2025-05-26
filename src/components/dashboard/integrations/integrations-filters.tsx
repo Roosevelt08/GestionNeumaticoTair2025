@@ -17,6 +17,7 @@ interface CompaniesFiltersProps {
   projectName: string;
   operationName?: string;
   autosDisponiblesCount?: number;
+  onVehiculoSeleccionado?: (vehiculo: any) => void;
 }
 
 export function CompaniesFilters({
@@ -24,6 +25,7 @@ export function CompaniesFilters({
   projectName,
   operationName,
   autosDisponiblesCount,
+  onVehiculoSeleccionado,
 }: CompaniesFiltersProps): React.JSX.Element {
   const [openModal, setOpenModal] = React.useState(false);
   const [checkboxChecked, setCheckboxChecked] = React.useState(false);
@@ -49,6 +51,13 @@ export function CompaniesFilters({
     if (event.target.value.trim() !== '') {
       setCheckboxChecked(false);
     }
+  };
+
+  const handleVehiculoSeleccionado = (vehiculo: any) => {
+    if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
+    setOpenModal(false);
+    setCheckboxChecked(false);
+    setInputValue('');
   };
 
   return (
@@ -106,11 +115,11 @@ export function CompaniesFilters({
           }}
         />
         <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
-          {autosDisponiblesCount} AUTOS DISPONIBLES
+          {autosDisponiblesCount} VEHICULOS DISPONIBLES
         </Typography>
       </Stack>
       {/* Modal para todas las placas */}
-      <ModalTodasPlacas open={openModal} onClose={handleCloseModal} />
+      <ModalTodasPlacas open={openModal} onClose={handleCloseModal} onVehiculoSeleccionado={handleVehiculoSeleccionado} />
     </Card>
   );
 }
