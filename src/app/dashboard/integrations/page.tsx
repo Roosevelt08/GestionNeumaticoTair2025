@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca } from '@/api/Neumaticos';
+import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca } from '@/api/Neumaticos';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -82,15 +82,17 @@ export default function Page(): React.JSX.Element {
     if (placa) {
       setLoading(true); // Mostrar indicador de carga
       try {
-        const responseVehiculo = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/vehiculo/${placa}`);
-        if (!responseVehiculo.ok) {
-          const errorData = await responseVehiculo.json();
-          setSnackbarMessage(errorData.mensaje || 'Error al buscar el vehículo.');
+        const vehiculoData = await buscarVehiculoPorPlaca(placa);
+        if (!vehiculoData) {
+          setSnackbarMessage('Vehículo no encontrado.');
           setSnackbarSeverity('error');
           setSnackbarOpen(true);
+          setVehiculo(null);
+          setNeumaticosFiltrados([]);
+          setNeumaticosAsignados([]);
+          setLoading(false);
           return;
         }
-        const vehiculoData = await responseVehiculo.json();
         setVehiculo(vehiculoData);
         setSnackbarMessage('Vehículo encontrado exitosamente.');
         setSnackbarSeverity('success');
@@ -508,7 +510,7 @@ export default function Page(): React.JSX.Element {
                   boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
                 }}
               >
-                {`Disponibles: ${animatedTotalNeumaticos.toLocaleString()} Neumáticos`}
+                {`Disponibles: ${neumaticosFiltrados.filter(n => n.ESTADO_ASIGNACION === 'DISPONIBLE').length.toLocaleString()} Neumáticos`}
               </Box>
             </Stack>
             <OutlinedInput
@@ -540,7 +542,8 @@ export default function Page(): React.JSX.Element {
               </TableHead>
               <TableBody>
                 {neumaticosFiltrados
-                  .slice(page * 3, page * 3 + 3)
+                  .filter(n => n.ESTADO_ASIGNACION === 'DISPONIBLE')
+                  .slice(page * 5, page * 5 + 5)
                   .map((neumatico) => (
                     <TableRow key={neumatico.CODIGO}>
                       <TableCell align="center">{neumatico.CODIGO}</TableCell>
@@ -594,7 +597,7 @@ export default function Page(): React.JSX.Element {
             rowsPerPageOptions={[]}
             component="div"
             count={neumaticosFiltrados.length}
-            rowsPerPage={3}
+            rowsPerPage={5}
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={undefined}
