@@ -35,8 +35,6 @@ export function CompaniesFilters({
           }
           sx={{ maxWidth: '400px' }}
         />
-
-        {/* Icono del proyecto */}
         <Box
           component="img"
           src="/assets/proyecto.png"
@@ -63,6 +61,15 @@ export function CompaniesFilters({
             {operationName}
           </Typography>
         )}
+        <Box
+          component="img"
+          src="/assets/vehiculo.png"
+          alt="Vehículo"
+          sx={{
+            width: 100,
+            height: 100,
+          }}
+        />
       </Stack>
     </Card>
   );

@@ -65,3 +65,21 @@ export const obtenerCantidadNeumaticos = async () => {
   const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos/cantidad`, { withCredentials: true });
   return response.data.cantidad;
 };
+
+// Obtener la cantidad de neumáticos disponibles
+export const obtenerCantidadNeumaticosDisponibles = async () => {
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos/disponibles/cantidad`, { withCredentials: true });
+  return response.data.cantidad;
+};
+
+// Obtener la cantidad de neumáticos asignados
+export const obtenerCantidadNeumaticosAsignados = async () => {
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos/asignados/cantidad`, { withCredentials: true });
+  return response.data.cantidad;
+};
+
+// Obtener la cantidad de autos (placas) disponibles para el usuario autenticado
+export const obtenerCantidadAutosDisponibles = async () => {
+  const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/vehiculo/cantidad`, { withCredentials: true });
+  return response.data.cantidad;
+};

@@ -22,6 +22,7 @@ import { CustomersTable, Customer } from '@/components/dashboard/customer/custom
 import { Neumaticos } from '@/api/Neumaticos';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
 import { useUser } from '@/hooks/use-user';
+import { obtenerCantidadNeumaticos, obtenerCantidadNeumaticosDisponibles, obtenerCantidadNeumaticosAsignados, obtenerCantidadAutosDisponibles } from '@/api/Neumaticos';
 
 export default function Page(): React.JSX.Element {
   const { user } = useUser();
@@ -80,50 +81,27 @@ export default function Page(): React.JSX.Element {
     fetchData();
   }, []);
 
-  // useEffect(() => {
-  //   fetch('http://192.168.5.207:3001/api/po-neumaticos/proyectos/cantidad')
-  //     .then((res) => res.json())
-  //     .then(({ cantidad }) => setProjectCount(cantidad))
-  //     .catch(console.error);
-  // }, []);
-
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/po-neumaticos/cantidad', { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) throw new Error('No autorizado');
-        return res.json();
-      })
-      .then(({ cantidad }) => setProjectCount(cantidad))
+    obtenerCantidadNeumaticos()
+      .then(setProjectCount)
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/po-neumaticos/disponibles/cantidad', { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) throw new Error('No autorizado');
-        return res.json();
-      })
-      .then(({ cantidad }) => setDisponiblesCount(cantidad))
+    obtenerCantidadNeumaticosDisponibles()
+      .then(setDisponiblesCount)
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad', { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) throw new Error('No autorizado');
-        return res.json();
-      })
-      .then(({ cantidad }) => setAsignadosCount(cantidad))
+    obtenerCantidadNeumaticosAsignados()
+      .then(setAsignadosCount)
       .catch(console.error);
   }, []);
 
   useEffect(() => {
-    fetch('http://192.168.5.207:3001/api/vehiculo/cantidad', { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) throw new Error('No autorizado');
-        return res.json();
-      })
-      .then(({ cantidad }) => setAutosDisponiblesCount(cantidad))
+    obtenerCantidadAutosDisponibles()
+      .then(setAutosDisponiblesCount)
       .catch(console.error);
   }, []);
 
@@ -244,19 +222,19 @@ export default function Page(): React.JSX.Element {
     try {
       const data = await Neumaticos();
       setCustomers(data);
-      // Actualiza los contadores:
-      fetch('http://192.168.5.207:3001/api/po-neumaticos/cantidad', { credentials: 'include' })
-        .then((res) => res.json())
-        .then(({ cantidad }) => setProjectCount(cantidad));
-      fetch('http://192.168.5.207:3001/api/po-neumaticos/disponibles/cantidad', { credentials: 'include' })
-        .then((res) => res.json())
-        .then(({ cantidad }) => setDisponiblesCount(cantidad));
-      fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad', { credentials: 'include' })
-        .then((res) => res.json())
-        .then(({ cantidad }) => setAsignadosCount(cantidad));
-      fetch('http://192.168.5.207:3001/api/vehiculo/cantidad', { credentials: 'include' })
-        .then((res) => res.json())
-        .then(({ cantidad }) => setAutosDisponiblesCount(cantidad));
+      // Actualiza los contadores usando funciones reutilizables:
+      obtenerCantidadNeumaticos()
+        .then(setProjectCount)
+        .catch(console.error);
+      obtenerCantidadNeumaticosDisponibles()
+        .then(setDisponiblesCount)
+        .catch(console.error);
+      obtenerCantidadNeumaticosAsignados()
+        .then(setAsignadosCount)
+        .catch(console.error);
+      obtenerCantidadAutosDisponibles()
+        .then(setAutosDisponiblesCount)
+        .catch(console.error);
     } catch (error) {
       alert('Error al refrescar los datos');
     }
