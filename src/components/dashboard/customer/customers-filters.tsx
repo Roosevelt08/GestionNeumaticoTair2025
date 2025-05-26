@@ -13,17 +13,20 @@ export interface CustomersFiltersProps {
   projectCount: number;
   disponiblesCount: number;
   asignadosCount: number;
+  autosDisponiblesCount?: number;
 }
 
 export function CustomersFilters({
   projectCount,
   disponiblesCount,
   asignadosCount,
+  autosDisponiblesCount,
 }: CustomersFiltersProps): React.JSX.Element {
   // Animaciones para cada contador
   const [displayCount, setDisplayCount] = React.useState(0);
   const [displayDisponibles, setDisplayDisponibles] = React.useState(0);
   const [displayAsignados, setDisplayAsignados] = React.useState(0);
+  const [displayAutosDisponibles, setDisplayAutosDisponibles] = React.useState(0);
 
   // Animación total
   React.useEffect(() => {
@@ -93,6 +96,29 @@ export function CustomersFilters({
     }
     return () => cancelAnimationFrame(rafId);
   }, [asignadosCount]);
+
+  // Animación autos disponibles
+  React.useEffect(() => {
+    let start = 0;
+    let rafId: number;
+    const animate = () => {
+      const increment = Math.ceil(((autosDisponiblesCount ?? 0) - start) / 20);
+      start += increment;
+      if (start >= (autosDisponiblesCount ?? 0)) {
+        setDisplayAutosDisponibles(autosDisponiblesCount ?? 0);
+      } else {
+        setDisplayAutosDisponibles(start);
+        rafId = requestAnimationFrame(animate);
+      }
+    };
+    if ((autosDisponiblesCount ?? 0) > 0) {
+      setDisplayAutosDisponibles(0);
+      rafId = requestAnimationFrame(animate);
+    } else {
+      setDisplayAutosDisponibles(0);
+    }
+    return () => cancelAnimationFrame(rafId);
+  }, [autosDisponiblesCount]);
 
   return (
     <Card sx={{ p: 2 }}>
@@ -174,9 +200,9 @@ export function CustomersFilters({
               width: '100%',
               minWidth: 120,
               height: 80,
-              bgcolor: '#fff3e0',
+              bgcolor: '#e3f2fd',
               borderRadius: '17px',
-              border: '5px solid #ffb74d',
+              border: '5px solid #90caf9',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -185,7 +211,7 @@ export function CustomersFilters({
               color: '#333',
             }}
           >
-            {displayAsignados}
+            {displayAutosDisponibles}
           </Box>
           <Typography align="center" variant="body2" color="text.secondary">
             Autos Disponibles 

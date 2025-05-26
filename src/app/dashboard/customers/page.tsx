@@ -65,6 +65,7 @@ export default function Page(): React.JSX.Element {
   const [projectCount, setProjectCount] = useState<number>(0);
   const [disponiblesCount, setDisponiblesCount] = useState<number>(0);
   const [asignadosCount, setAsignadosCount] = useState<number>(0);
+  const [autosDisponiblesCount, setAutosDisponiblesCount] = useState<number>(0);
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -113,6 +114,16 @@ export default function Page(): React.JSX.Element {
         return res.json();
       })
       .then(({ cantidad }) => setAsignadosCount(cantidad))
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    fetch('http://192.168.5.207:3001/api/vehiculo/cantidad', { credentials: 'include' })
+      .then((res) => {
+        if (!res.ok) throw new Error('No autorizado');
+        return res.json();
+      })
+      .then(({ cantidad }) => setAutosDisponiblesCount(cantidad))
       .catch(console.error);
   }, []);
 
@@ -243,6 +254,9 @@ export default function Page(): React.JSX.Element {
       fetch('http://192.168.5.207:3001/api/po-neumaticos/asignados/cantidad', { credentials: 'include' })
         .then((res) => res.json())
         .then(({ cantidad }) => setAsignadosCount(cantidad));
+      fetch('http://192.168.5.207:3001/api/vehiculo/cantidad', { credentials: 'include' })
+        .then((res) => res.json())
+        .then(({ cantidad }) => setAutosDisponiblesCount(cantidad));
     } catch (error) {
       alert('Error al refrescar los datos');
     }
@@ -330,10 +344,11 @@ export default function Page(): React.JSX.Element {
           </Box>
         </Stack>
         <CustomersFilters
-          key={projectCount + '-' + disponiblesCount + '-' + asignadosCount + '-' + Date.now()}
+          key={projectCount + '-' + disponiblesCount + '-' + asignadosCount + '-' + autosDisponiblesCount + '-' + Date.now()}
           projectCount={projectCount}
           disponiblesCount={disponiblesCount}
           asignadosCount={asignadosCount}
+          autosDisponiblesCount={autosDisponiblesCount}
         />
 
 
