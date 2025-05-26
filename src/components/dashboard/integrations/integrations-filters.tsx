@@ -26,18 +26,38 @@ export function CompaniesFilters({
   autosDisponiblesCount,
 }: CompaniesFiltersProps): React.JSX.Element {
   const [openModal, setOpenModal] = React.useState(false);
+  const [checkboxChecked, setCheckboxChecked] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState('');
+
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
+    const checked = event.target.checked;
+    setCheckboxChecked(checked);
+    if (checked) {
       setOpenModal(true);
     }
   };
-  const handleCloseModal = () => setOpenModal(false);
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setCheckboxChecked(false); // Desactivar el checkbox al cerrar el modal
+    setInputValue(''); // Limpiar el input al cerrar el modal
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(event.target.value);
+    onSearchChange(event);
+    if (event.target.value.trim() !== '') {
+      setCheckboxChecked(false);
+    }
+  };
+
   return (
     <Card sx={{ p: 2 }}>
       <Stack direction="row" spacing={2} alignItems="center">
         {/* Input de búsqueda */}
         <OutlinedInput
-          onChange={onSearchChange}
+          onChange={handleInputChange}
+          value={inputValue}
           fullWidth
           placeholder="Buscar por Placa"
           startAdornment={
@@ -46,9 +66,10 @@ export function CompaniesFilters({
             </InputAdornment>
           }
           sx={{ maxWidth: '400px' }}
+          disabled={checkboxChecked}
         />
         <FormControlLabel
-          control={<Checkbox onChange={handleCheckboxChange} />}
+          control={<Checkbox onChange={handleCheckboxChange} checked={checkboxChecked} disabled={inputValue.trim() !== ''} />}
           label="Transito"
         />
         <Box
