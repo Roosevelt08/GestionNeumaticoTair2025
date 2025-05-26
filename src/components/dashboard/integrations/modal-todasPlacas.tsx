@@ -27,9 +27,12 @@ const ModalTodasPlacas: React.FC<ModalTodasPlacasProps> = ({ open, onClose }) =>
         setLoading(true);
         try {
             const data = await buscarVehiculoPorPlacaEmpresa(value);
-            if (!data) {
+            if (data && data.mensaje === "Esa placa la tienes asignada en tu Taller") {
                 setVehiculo(null);
-                setError('Vehículo no encontrado');
+                setError("Esa placa la tienes asignada en tu operación");
+            } else if (!data || data.mensaje) {
+                setVehiculo(null);
+                setError(data?.mensaje || 'Vehículo no encontrado');
             } else {
                 setVehiculo(data);
             }
