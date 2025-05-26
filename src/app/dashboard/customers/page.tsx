@@ -284,8 +284,8 @@ export default function Page(): React.JSX.Element {
               placeholder="Buscar neumático..."
               sx={{
                 width: {
-                  xs: '100%',   // 100% en pantallas pequeñas
-                  sm: 300       // 300px en pantallas medianas o mayores
+                  xs: '100%',   
+                  sm: 300       
                 }
               }}
             />

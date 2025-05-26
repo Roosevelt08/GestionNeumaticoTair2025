@@ -96,8 +96,8 @@ export function CustomersFilters({
 
   return (
     <Card sx={{ p: 2 }}>
-      <Grid container spacing={2} justifyContent="center" alignItems="center">
-        <Grid item xs={6} sm={4}>
+      <Grid container spacing={2} justifyContent="center" alignItems="center" wrap="nowrap" sx={{ flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+        <Grid item xs={12} sm={3} md={3} lg={3}>
           <Box
             sx={{
               width: '100%',
@@ -112,15 +112,17 @@ export function CustomersFilters({
               fontSize: 32,
               fontWeight: 'bold',
               color: '#333',
+              position: 'relative',
             }}
           >
             {displayCount}
+            <img src="/assets/llantas.png" alt="llantas" style={{ position: 'absolute', right: 8, bottom: 8, width: 36, height: 36 }} />
           </Box>
           <Typography align="center" variant="body2" color="text.secondary">
             Total neumáticos
           </Typography>
         </Grid>
-        <Grid item xs={6} sm={4}>
+        <Grid item xs={12} sm={3} md={3} lg={3}>
           <Box
             sx={{
               width: '100%',
@@ -143,7 +145,7 @@ export function CustomersFilters({
             Disponibles
           </Typography>
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} sm={3} md={3} lg={3}>
           <Box
             sx={{
               width: '100%',
@@ -164,6 +166,29 @@ export function CustomersFilters({
           </Box>
           <Typography align="center" variant="body2" color="text.secondary">
             Asignados
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={3} md={3} lg={3}>
+          <Box
+            sx={{
+              width: '100%',
+              minWidth: 120,
+              height: 80,
+              bgcolor: '#fff3e0',
+              borderRadius: '17px',
+              border: '5px solid #ffb74d',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 32,
+              fontWeight: 'bold',
+              color: '#333',
+            }}
+          >
+            {displayAsignados}
+          </Box>
+          <Typography align="center" variant="body2" color="text.secondary">
+            Autos Disponibles 
           </Typography>
         </Grid>
       </Grid>
