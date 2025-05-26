@@ -8,18 +8,30 @@ import { MagnifyingGlass as MagnifyingGlassIcon } from '@phosphor-icons/react/di
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import ModalTodasPlacas from './modal-todasPlacas';
 
 interface CompaniesFiltersProps {
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  projectName: string;             // ← Nuevo prop para el nombre del proyecto
-  operationName?: string;          // ← Prop opcional para el nombre de la operación
+  projectName: string;
+  operationName?: string;
+  autosDisponiblesCount?: number;
 }
 
 export function CompaniesFilters({
   onSearchChange,
-  projectName,                     // ← Lo recibimos aquí
-  operationName,                   // ← Y aquí
+  projectName,
+  operationName,
+  autosDisponiblesCount,
 }: CompaniesFiltersProps): React.JSX.Element {
+  const [openModal, setOpenModal] = React.useState(false);
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      setOpenModal(true);
+    }
+  };
+  const handleCloseModal = () => setOpenModal(false);
   return (
     <Card sx={{ p: 2 }}>
       <Stack direction="row" spacing={2} alignItems="center">
@@ -34,6 +46,10 @@ export function CompaniesFilters({
             </InputAdornment>
           }
           sx={{ maxWidth: '400px' }}
+        />
+        <FormControlLabel
+          control={<Checkbox onChange={handleCheckboxChange} />}
+          label="Todas las Placas"
         />
         <Box
           component="img"
@@ -56,11 +72,9 @@ export function CompaniesFilters({
             height: 70,
           }}
         />
-        {operationName && (
-          <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
-            {operationName}
-          </Typography>
-        )}
+        <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
+          {operationName}
+        </Typography>
         <Box
           component="img"
           src="/assets/vehiculo.png"
@@ -70,7 +84,14 @@ export function CompaniesFilters({
             height: 100,
           }}
         />
+        <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
+          {autosDisponiblesCount} AUTOS DISPONIBLES
+        </Typography>
       </Stack>
+      {/* Modal para todas las placas */}
+      <ModalTodasPlacas open={openModal} onClose={handleCloseModal} />
     </Card>
   );
 }
+
+export default CompaniesFilters;

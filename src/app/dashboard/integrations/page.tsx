@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca } from '@/api/Neumaticos';
+import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca, obtenerCantidadAutosDisponibles } from '@/api/Neumaticos';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -48,6 +48,7 @@ export default function Page(): React.JSX.Element {
   const [loading, setLoading] = React.useState(false);
   const [assignedNeumaticos, setAssignedNeumaticos] = React.useState<{ [key: string]: Neumatico | null }>({});
   const [assignedFromAPI, setAssignedFromAPI] = useState<Neumatico[]>([]);
+  const [autosDisponiblesCount, setAutosDisponiblesCount] = useState<number>(0);
 
   interface Vehiculo {
     PLACA: string;
@@ -231,9 +232,11 @@ export default function Page(): React.JSX.Element {
       });
   }, [vehiculo]);
 
-
-
-
+  useEffect(() => {
+    obtenerCantidadAutosDisponibles()
+      .then(setAutosDisponiblesCount)
+      .catch(console.error);
+  }, []);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -254,7 +257,8 @@ export default function Page(): React.JSX.Element {
       <CompaniesFilters 
         onSearchChange={handleSearchChange}
         projectName={vehiculo?.PROYECTO || '—'}
-        operationName={vehiculo?.OPERACION?.trim() || ''}
+        operationName={vehiculo?.OPERACION?.trim() || '—'}
+        autosDisponiblesCount={autosDisponiblesCount}
       />
       <Stack direction="row" spacing={2}>
         <Card sx={{
