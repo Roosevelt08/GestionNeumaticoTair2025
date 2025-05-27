@@ -29,7 +29,7 @@ import ModalAsignacionNeu from '@/components/dashboard/integrations/modal-asigna
 import ModalDeleteNeu from '@/components/dashboard/integrations/modal-deleteNeu';
 import ModalInpeccionNeu from '@/components/dashboard/integrations/modal-inspeccionNeu';
 import ModalMantenimientoNeu from '@/components/dashboard/integrations/modal-mantenimientoNeu';
-import DiagramaVehiculo from '@/components/dashboard/integrations/DiagramaVehiculo';
+import DiagramaVehiculo from '@/styles/theme/components/DiagramaVehiculo';
 import { Neumatico } from '@/types/types';
 
 export default function Page(): React.JSX.Element {

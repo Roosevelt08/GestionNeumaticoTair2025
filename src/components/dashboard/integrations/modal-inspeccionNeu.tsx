@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
-import DiagramaVehiculo from './DiagramaVehiculo';
+import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 
 interface Neumatico {
   POSICION: string;
@@ -24,7 +24,7 @@ interface ModalInpeccionNeuProps {
 
 const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados }) => {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
       {/* <DialogTitle sx={{ fontWeight: 'bold', color: '#388e3c' }}>Inspección de Neumáticos</DialogTitle> */}
       <DialogContent>
         <Stack direction="row" spacing={2}>
@@ -42,8 +42,16 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
             </Card>
           </Stack>
           {/* Columna derecha: Imagen o visualización */}
-          <Card sx={{ flex: 0.5, p: 2, position: 'relative', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-            <Box sx={{ position: 'relative', width: '470px', height: '430px' }}>
+          <Card sx={{
+            flex: 0.5,
+            p: 2,
+            position: 'relative',
+            boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+            maxWidth: 400, 
+            minWidth: 320, 
+            width: '100%'  
+          }}>
+            <Box sx={{ position: 'relative', width: '370px', height: '430px' }}>
               <DiagramaVehiculo neumaticosAsignados={neumaticosAsignados} layout="modal" />
               <img
                 src="/assets/placa.png"
@@ -53,16 +61,16 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                   height: '60px',
                   objectFit: 'contain',
                   position: 'absolute',
-                  top: 0,
-                  right: '58px',
+                  top: '10px',
+                  right: '68px',
                   zIndex: 2,
                 }}
               />
               <Box
                 sx={{
                   position: 'absolute',
-                  top: '15px',
-                  right: '58px',
+                  top: '24px',
+                  right: '68px',
                   zIndex: 3,
                   color: 'black',
                   padding: '2px 8px',
