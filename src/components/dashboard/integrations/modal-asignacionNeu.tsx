@@ -27,6 +27,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import ModalAvertAsigNeu from './modal-avertAsigNeu';
 import ModalInputsNeu from './modal-inputsNeu';
 import { Neumatico } from '@/types/types';
+import { asignarNeumatico } from '../../../api/Neumaticos'; // Ajusta la ruta según la ubicación real del archivo
 
 const ItemType = {
     NEUMATICO: 'neumatico',
@@ -365,8 +366,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     const filteredData = useMemo(() => {
         return data.filter(
             (neumatico) =>
-                neumatico.CODIGO.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                neumatico.MARCA.toLowerCase().includes(searchTerm.toLowerCase())
+                neumatico.ESTADO_ASIGNACION === 'DISPONIBLE' &&
+                (neumatico.CODIGO.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    neumatico.MARCA.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [data, searchTerm]);
 
@@ -386,27 +388,16 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             return;
         }
         try {
+            // Usar la función centralizada de la API
             await Promise.all(
                 toAssign.map(([pos, neu]) => {
                     const codigo = neu!.CODIGO ?? neu!.CODIGO_NEU;
-                    return fetch(
-                        `${process.env.NEXT_PUBLIC_API_URL}/api/asignar-neumatico`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                Placa: placa,
-                                Posicion: pos,
-                                CodigoNeumatico: codigo,
-                                Odometro: kilometraje,
-                                Observacion: "Asignado desde UI",
-                            }),
-                        }
-                    ).then(async (res) => {
-                        if (!res.ok) {
-                            const err = await res.json();
-                            throw new Error(`Error en posición ${pos}: ${err.error}`);
-                        }
+                    return asignarNeumatico({
+                        Placa: placa,
+                        Posicion: pos,
+                        CodigoNeumatico: codigo,
+                        Odometro: kilometraje,
+                        Observacion: "Asignado desde UI",
                     });
                 })
             );
@@ -432,13 +423,11 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             >
                 <DialogContent>
                     <Stack direction="row" spacing={2}>
-                        {/* Información del Vehículo */}
 
                         <Card sx={{ flex: 0.5, p: 2, position: 'relative', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-
-                            <Typography variant="h6" sx={{ mb: 2 }}>
+                            {/* <Typography variant="h6" sx={{ mb: 2 }}>
                                 Información del Vehículo
-                            </Typography>
+                            </Typography> */}
                             <Box sx={{ position: 'relative', width: '100%', height: '650px' }}>
                                 <img
                                     src="/assets/car-diagram.png"
@@ -535,9 +524,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     variant="h6"
                                     sx={{
                                         position: 'absolute',
-                                        top: '700px', // Ajusta la posición según sea necesario
-                                        left: '220px', // Centra el texto horizontalmente
-                                        transform: 'translateX(-50%)', // Ajusta la posición para centrar
+                                        top: '700px', 
+                                        left: '220px', 
+                                        transform: 'translateX(-50%)', 
                                         zIndex: 2,
                                         color: 'black',
                                         padding: '5px 10px',
@@ -644,6 +633,13 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                                                     ? theme.palette.action.disabledBackground
                                                                     : 'inherit',
                                                                 pointerEvents: isDisabled ? 'none' : 'auto',
+                                                                transition: 'box-shadow 0.2s, background 0.2s',
+                                                                '&:hover': !isDisabled
+                                                                    ? {
+                                                                        boxShadow: '0 2px 12px 0 #bdbdbd', // plomo claro
+                                                                        backgroundColor: '#f5f5f5', // fondo gris muy claro
+                                                                    }
+                                                                    : {},
                                                             }}
                                                         >
                                                             {/* 2️⃣ arrastrable deshabilitado */}
