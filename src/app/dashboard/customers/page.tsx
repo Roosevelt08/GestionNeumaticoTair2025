@@ -23,6 +23,7 @@ import { Neumaticos } from '@/api/Neumaticos';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
 import { useUser } from '@/hooks/use-user';
 import { obtenerCantidadNeumaticos, obtenerCantidadNeumaticosDisponibles, obtenerCantidadNeumaticosAsignados, obtenerCantidadAutosDisponibles } from '@/api/Neumaticos';
+import ModalInsertExcel from '@/components/dashboard/customer/modal-insertExcel';
 
 export default function Page(): React.JSX.Element {
   const { user } = useUser();
@@ -30,38 +31,11 @@ export default function Page(): React.JSX.Element {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [loading, setLoading] = useState(false);
-  const inputFileRef = useRef<HTMLInputElement>(null);
   const [resultadoCarga, setResultadoCarga] = useState<any>(null);
   const [modalCargaVisible, setModalCargaVisible] = useState(false);
   const [modalErroresVisible, setModalErroresVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
-
-  interface FileUploadEvent extends React.ChangeEvent<HTMLInputElement> {
-    target: HTMLInputElement & { files: FileList };
-  }
-
-  const handleFileUpload = async (event: FileUploadEvent): Promise<void> => {
-    const file: File | null = event.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    try {
-      const response = await cargarPadronNeumatico(file);
-      setResultadoCarga(response);
-      setModalCargaVisible(true);
-
-      if (response.insertados > 0) {
-        const data = await Neumaticos();
-        setCustomers(data);
-      }
-    } catch (error) {
-      console.error("❌ Error al cargar:", error);
-      alert("Error al cargar el archivo");
-    } finally {
-      setLoading(false);
-      event.target.value = "";
-    }
-  };
+  const [modalImportarVisible, setModalImportarVisible] = useState(false);
 
   const [projectCount, setProjectCount] = useState<number>(0);
   const [disponiblesCount, setDisponiblesCount] = useState<number>(0);
@@ -129,8 +103,8 @@ export default function Page(): React.JSX.Element {
     c.OC.toString().toLowerCase().includes(searchText) ||
     c.PROYECTO.toLowerCase().includes(searchText) ||
     c.PROVEEDOR.toLowerCase().includes(searchText) ||
-    c.FECHA.toLowerCase().includes(searchText) ||
-    c.ESTADO_ASIGNACION.toLowerCase().includes(searchText)
+    c.FECHA_FABRICACION_COD.toLowerCase().includes(searchText) ||
+    c.TIPO_MOVIMIENTO.toLowerCase().includes(searchText)
   );
 
   const paginatedCustomers = applyPagination(filteredCustomers, page, rowsPerPage);
@@ -246,6 +220,33 @@ export default function Page(): React.JSX.Element {
   // Determinar si el usuario tiene el perfil 002 (JEFE DE TALLER)
   const esJefeTaller = Array.isArray(user?.perfiles) && user.perfiles.some((p: any) => p.codigo === '002');
 
+  // Nueva función para importar desde el modal
+  const handleImportarArchivo = async (file: File) => {
+    setLoading(true);
+    setResultadoCarga(null);
+    try {
+      const response = await cargarPadronNeumatico(file);
+      setResultadoCarga(response);
+      setModalCargaVisible(true);
+      setModalImportarVisible(false);
+      if (response.insertados > 0) {
+        const data = await Neumaticos();
+        setCustomers(data);
+      }
+    } catch (error: any) {
+      setResultadoCarga({
+        mensaje: error.message || 'Error desconocido al cargar el archivo',
+        total: 0,
+        insertados: 0,
+        errores: []
+      });
+      setModalCargaVisible(true);
+      setModalImportarVisible(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       {loading && (
@@ -283,17 +284,10 @@ export default function Page(): React.JSX.Element {
             />
           </Box>
           <Box sx={{ display: 'flex', gap: 2, mt: { xs: 2, md: 0 } }}>
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              ref={inputFileRef}
-              style={{ display: "none" }}
-              onChange={handleFileUpload}
-            />
             <Button
               color="inherit"
               startIcon={<UploadIcon />}
-              onClick={() => inputFileRef.current?.click()}
+              onClick={() => setModalImportarVisible(true)}
               disabled={loading || esJefeTaller}
             >
               {isMobile ? null : (loading ? "Cargando..." : "Importar")}
@@ -357,19 +351,46 @@ export default function Page(): React.JSX.Element {
                 backgroundColor:
                   resultadoCarga.mensaje.includes("correctamente") ? "#e0f7e9"
                     : resultadoCarga.mensaje.includes("no realizada") ? "#ffebee"
-                      : "#fff8e1",
+                      : resultadoCarga.mensaje.toLowerCase().includes("error") ? "#ffebee"
+                        : "#fff8e1",
                 color:
                   resultadoCarga.mensaje.includes("correctamente") ? "#2e7d32"
                     : resultadoCarga.mensaje.includes("no realizada") ? "#c62828"
-                      : "#f9a825",
+                      : resultadoCarga.mensaje.toLowerCase().includes("error") ? "#c62828"
+                        : "#f9a825",
                 fontWeight: "bold"
               }}>
                 {resultadoCarga.mensaje}
               </p>
             )}
+            {resultadoCarga.errores && resultadoCarga.errores.length > 0 && (
+              <>
+                <p style={{marginTop: 18, fontWeight: 600, color: '#c62828'}}>Errores detectados:</p>
+                <div style={{ maxHeight: '300px', overflowY: 'auto', margin: '0 auto', marginBottom: 10, minWidth: 'min(90vw, 400px)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.98rem' }}>
+                    <thead>
+                      <tr>
+                        <th style={{background:'#f5f5f5', padding:'6px'}}>Fila/Código</th>
+                        <th style={{background:'#f5f5f5', padding:'6px'}}>Mensaje</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resultadoCarga.errores.map((err: { fila: string; mensaje: string }, idx: number) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '6px', border: '1px solid #eee' }}>{err.fila}</td>
+                          <td style={{ color: '#c62828', fontWeight: 'bold', padding: '6px', border: '1px solid #eee' }}>
+                            {err.mensaje || "Error desconocido"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
             <button onClick={() => {
               setModalCargaVisible(false);
-              if (resultadoCarga.errores?.length > 0) {
+              if (resultadoCarga.errores && resultadoCarga.errores.length > 0) {
                 setModalErroresVisible(true);
               }
             }}>Aceptar</button>
@@ -387,12 +408,12 @@ export default function Page(): React.JSX.Element {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      <th>Fila</th>
+                      <th>Fila/Código</th>
                       <th>Mensaje</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {resultadoCarga.errores.map((err: { fila: number; mensaje: string }, idx: number) => (
+                    {resultadoCarga.errores.map((err: { fila: string; mensaje: string }, idx: number) => (
                       <tr key={idx}>
                         <td>{err.fila}</td>
                         <td style={{ color: 'red', fontWeight: 'bold' }}>
@@ -408,6 +429,21 @@ export default function Page(): React.JSX.Element {
           </ModalOverlay>
         )
       }
+
+      <ModalInsertExcel
+        open={modalImportarVisible}
+        onClose={() => setModalImportarVisible(false)}
+        onSuccess={async () => {
+          // Refresca la tabla solo si hubo éxito en la carga
+          const data = await Neumaticos();
+          setCustomers(data);
+          // También refresca los contadores
+          obtenerCantidadNeumaticos().then(setProjectCount).catch(console.error);
+          obtenerCantidadNeumaticosDisponibles().then(setDisponiblesCount).catch(console.error);
+          obtenerCantidadNeumaticosAsignados().then(setAsignadosCount).catch(console.error);
+          obtenerCantidadAutosDisponibles().then(setAutosDisponiblesCount).catch(console.error);
+        }}
+      />
     </>
   );
 }

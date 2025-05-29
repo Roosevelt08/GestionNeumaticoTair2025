@@ -647,6 +647,18 @@ export default function Page(): React.JSX.Element {
         onClose={() => setOpenInspeccionModal(false)}
         placa={vehiculo?.PLACA ?? ''}
         neumaticosAsignados={neumaticosAsignados.filter((n): n is Neumatico & { POSICION: string } => typeof n.POSICION === 'string')}
+        vehiculo={vehiculo ? {
+          placa: vehiculo.PLACA,
+          marca: vehiculo.MARCA,
+          modelo: vehiculo.MODELO,
+          anio: vehiculo.ANO?.toString() ?? '',
+          color: vehiculo.COLOR,
+          proyecto: vehiculo.PROYECTO,
+          operacion: vehiculo.OPERACION,
+          kilometraje: vehiculo.KILOMETRAJE
+        } : undefined}
+        // Nueva prop para selección de neumático
+        onSeleccionarNeumatico={() => {}}
       />
       <ModalMantenimientoNeu open={openMantenimientoModal} onClose={() => setOpenMantenimientoModal(false)} />
     </Stack>

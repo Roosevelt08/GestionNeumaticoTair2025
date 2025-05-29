@@ -3,6 +3,8 @@ import Box from '@mui/material/Box';
 
 interface Neumatico {
     POSICION: string;
+    CODIGO_NEU?: string;
+    CODIGO?: string;
 }
 
 interface DiagramaVehiculoProps {
@@ -25,7 +27,7 @@ const posiciones = {
     ],
 };
 
-const DiagramaVehiculo: React.FC<DiagramaVehiculoProps> = ({ neumaticosAsignados, layout = 'dashboard' }) => {
+const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void }> = ({ neumaticosAsignados, layout = 'dashboard', onPosicionClick }) => {
     const pos = posiciones[layout];
     return (
         <Box
@@ -60,29 +62,38 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps> = ({ neumaticosAsignados
                         }
                 }
             />
-            {pos.map(({ key, top, left }) => (
-                <Box
-                    key={key}
-                    sx={{
-                        position: 'absolute',
-                        top,
-                        left,
-                        zIndex: 2,
-                        width: '26px',
-                        height: '58px',
-                        borderRadius: '15px',
-                        backgroundColor: neumaticosAsignados.some(n => n.POSICION === key) ? 'lightgreen' : 'transparent',
-                        border: '2px solid #888',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        color: '#222',
-                        fontSize: 18,
-                        pointerEvents: 'none',
-                    }}
-                />
-            ))}
+            {pos.map(({ key, top, left }) => {
+                const neumatico = neumaticosAsignados.find(n => n.POSICION === key);
+                return (
+                    <Box
+                        key={key}
+                        sx={{
+                            position: 'absolute',
+                            top,
+                            left,
+                            zIndex: 2,
+                            width: '26px',
+                            height: '58px',
+                            borderRadius: '15px',
+                            backgroundColor: neumatico ? 'lightgreen' : 'transparent',
+                            border: '2px solid #888',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            color: '#222',
+                            fontSize: 18,
+                            cursor: 'pointer',
+                            transition: 'box-shadow 0.2s',
+                            boxShadow: neumatico ? '0 0 8px 2px #4caf50' : 'none',
+                        }}
+                        onClick={() => onPosicionClick && onPosicionClick(neumatico)}
+                        title={key + (neumatico ? ` - ${neumatico.CODIGO_NEU || neumatico.CODIGO || ''}` : '')}
+                    >
+                        {key.replace('POS', '')}
+                    </Box>
+                );
+            })}
         </Box>
     );
 };

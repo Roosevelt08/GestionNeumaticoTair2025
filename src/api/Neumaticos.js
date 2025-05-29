@@ -11,17 +11,24 @@ export const cargarPadronNeumatico = async (archivoExcel) => {
   const formData = new FormData();
   formData.append("archivo", archivoExcel);
 
-  const response = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/po-padron/cargar-padron`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/po-padron/cargar-padron`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    // Si el backend responde con error 500 o 400, devolver el mensaje de error
+    if (error.response && error.response.data && error.response.data.error) {
+      throw new Error(error.response.data.error + (error.response.data.detalle ? `: ${error.response.data.detalle}` : ''));
     }
-  );
-
-  return response.data;
+    throw error;
+  }
 };
 
 // Buscar vehículo por placa
