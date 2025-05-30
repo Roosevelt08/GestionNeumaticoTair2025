@@ -241,6 +241,7 @@ const DropZone: React.FC<DropZoneProps> = ({
             )}
             {/* Si no está asignado, no mostrar nada visual extra */}
             <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleCloseMenu}>
+                <MenuItem onClick={() => { setInputsModalOpen(true); handleCloseMenu(); }}>Editar neumático</MenuItem>
                 <MenuItem onClick={handleOpenModal}>Quitar neumático</MenuItem>
             </Menu>
 
