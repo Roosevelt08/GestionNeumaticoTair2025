@@ -24,7 +24,7 @@ interface Vehiculo {
   color?: string;
   proyecto?: string;
   operacion?: string;
-  kilometraje?: number;
+  kilometro?: number;
 }
 
 interface ModalInpeccionNeuProps {
@@ -39,7 +39,7 @@ interface ModalInpeccionNeuProps {
 const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico }) => {
   const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
   const [formValues, setFormValues] = useState({
-    kilometraje: '',
+    kilometro: '',
     marca: '',
     modelo: '',
     codigo: '',
@@ -55,7 +55,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const handleSeleccionarNeumatico = (neumatico: any) => {
     setNeumaticoSeleccionado(neumatico);
     setFormValues({
-      kilometraje: vehiculo?.kilometraje?.toString() ?? '',
+      kilometro: vehiculo?.kilometro?.toString() ?? '',
       marca: neumatico.MARCA ?? '',
       modelo: neumatico.MODELO ?? '',
       codigo: neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '',
@@ -116,10 +116,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.color}</Typography>
                       </Box>
                     )}
-                    {vehiculo?.kilometraje !== undefined && (
+                    {vehiculo?.kilometro !== undefined && (
                       <Box>
                         <Typography variant="caption" color="text.secondary">Kilometraje</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.kilometraje.toLocaleString()} km</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.kilometro.toLocaleString()} km</Typography>
                       </Box>
                     )}
                   </Box>
@@ -130,7 +130,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
             </Card>
             <Card sx={{ p: 2 }}>
               <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                <TextField label="Kilometraje" name="kilometraje" type="number" size="small" value={formValues.kilometraje} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometraje.length + 3}ch` } }} />
+                <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
                 <TextField label="Marca" name="marca" size="small" value={formValues.marca} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
                 <TextField label="Código" name="codigo" size="small" value={formValues.codigo} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
                 <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />

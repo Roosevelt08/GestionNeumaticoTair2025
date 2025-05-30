@@ -40,7 +40,8 @@ export interface ModalAsignacionNeuProps {
     data: Neumatico[];
     assignedNeumaticos: Neumatico[]; // Added this property
     placa: string;
-    kilometraje: number;
+    kilometro: number;
+            onAssignedUpdate?: () => void; // Nuevo callback para refrescar asignados
 }
 
 const DraggableNeumatico: React.FC<{
@@ -103,11 +104,7 @@ interface DropZoneProps {
     setAssignedNeumaticos: React.Dispatch<React.SetStateAction<Record<string, Neumatico | null>>>;
 }
 
-interface ModalInputsNeuData {
-    kilometraje: number;
-    remanente: number;
-    presionAire: number;
-}
+// Elimina la interfaz ModalInputsNeuData, ya que no es compatible con el componente ModalInputsNeu
 
 const DropZone: React.FC<DropZoneProps> = ({
     position,
@@ -122,61 +119,59 @@ const DropZone: React.FC<DropZoneProps> = ({
     const [lastRemovedCode, setLastRemovedCode] = React.useState<string | null>(null);
     const [isShaking, setIsShaking] = React.useState<boolean>(false);
     const [inputsModalOpen, setInputsModalOpen] = React.useState<boolean>(false);
+    const [pendingInputs, setPendingInputs] = React.useState<null | { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number }>(null);
 
     const triggerShake = (): void => {
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600); // Dura 600ms
     };
-    const handleInputsModalSubmit = (data: ModalInputsNeuData): void => {
-        console.log('Datos del modal pequeño:', data);
-        // Aquí puedes manejar los datos del modal pequeño
+    
+    const handleInputsModalSubmit = (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number }): void => {
+        // Guarda los datos en el neumático asignado a esta posición
+        setAssignedNeumaticos((prev) => {
+            const current = prev[position];
+            if (!current) return prev;
+            return {
+                ...prev,
+                [position]: {
+                    ...current,
+                    REMANENTE: data.Remanente,
+                    PRESION_AIRE: data.PresionAire,
+                    TORQUE_APLICADO: data.TorqueAplicado,
+                    ODOMETRO: data.Odometro,
+                },
+            };
+        });
+        setInputsModalOpen(false);
     };
-
-    const [, drop] = useDrop<
-        Neumatico,
-        void,
-        unknown
-    >(() => ({
+    // Hook y ref para drop de react-dnd
+    const ref = React.useRef<HTMLDivElement>(null);
+    const [, drop] = useDrop({
         accept: ItemType.NEUMATICO,
         drop: (item: Neumatico) => {
-            // Evita drops en condiciones no válidas
             if (isModalOpen || dropBlocked) return;
-
-            // Ignorar si el neumático es justo el que se acaba de eliminar
             if (item.CODIGO === lastRemovedCode) {
                 console.log('Drop ignorado: mismo código que el eliminado recientemente.');
                 return;
             }
-
             let shouldShake = false;
-
             setAssignedNeumaticos((prev) => {
                 if (isDuplicadoEnOtraPos(item.CODIGO, position, prev)) {
                     shouldShake = true;
                     return prev;
                 }
-
                 return { ...prev, [position]: item };
             });
-
             if (shouldShake) {
-                setTimeout(() => {
-                    triggerShake();
-                }, 0);
+                setTimeout(() => { triggerShake(); }, 0);
             } else {
-                setInputsModalOpen(true); // Abrir el modal pequeño
+                setInputsModalOpen(true);
             }
-
-            // Activar animación de shake si es necesario
             if (shouldShake) {
-                setTimeout(() => {
-                    triggerShake();
-                }, 0);
+                setTimeout(() => { triggerShake(); }, 0);
             }
         },
-    }));
-
-    const ref = React.useRef<HTMLDivElement>(null);
+    });
     drop(ref);
 
     const handleContextMenu = (event: React.MouseEvent): void => {
@@ -228,7 +223,7 @@ const DropZone: React.FC<DropZoneProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isAssigned ? 'lightgreen' : 'transparent', // Pintar de verde si está asignado
+                backgroundColor: isAssigned ? 'lightgreen' : 'transparent',
                 borderRadius: '20px',
                 border: 'none',
                 pointerEvents: 'all',
@@ -242,7 +237,7 @@ const DropZone: React.FC<DropZoneProps> = ({
                     {assignedNeumaticos[position]?.CODIGO || '🛞'}
                 </span>
             )}
-
+            {/* Si no está asignado, no mostrar nada visual extra */}
             <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleCloseMenu}>
                 <MenuItem onClick={handleOpenModal}>Quitar neumático</MenuItem>
             </Menu>
@@ -265,8 +260,8 @@ const DropZone: React.FC<DropZoneProps> = ({
 
 
 
-const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, data, assignedNeumaticos: initialAssignedNeumaticos, placa, kilometraje }) => {
-
+const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, data, assignedNeumaticos: initialAssignedNeumaticos, placa, kilometro, onAssignedUpdate }) => {
+//console.log('ModalAsignacionNeu props:', { open, onClose, data, initialAssignedNeumaticos, placa, kilometro, onAssignedUpdate });
     const initialAssignedMap = useMemo<Record<string, Neumatico | null>>(
         () => {
             // Arranco con las cuatro posiciones en null
@@ -277,9 +272,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                 POS04: null,
             };
             initialAssignedNeumaticos.forEach((neu) => {
-                const pos = neu.POSICION;      // ① extraigo pos
+                const pos = neu.POSICION_NEU;      
                 if (pos && mapa.hasOwnProperty(pos)) {
-                    mapa[pos] = neu;             // ② sólo asigno si pos es válida
+                    mapa[pos] = neu;             
                 }
             });
             return mapa;
@@ -315,11 +310,14 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
         if (open) {
             setAssignedNeumaticos(initialAssignedMap);
         }
-    }, [open, initialAssignedMap]);
-
+        // LOG extra para ver qué props llegan desde el padre
+        console.log('PROPS assignedNeumaticos (initialAssignedNeumaticos):', initialAssignedNeumaticos);
+        console.log('initialAssignedMap:', initialAssignedMap);
+    }, [open, initialAssignedMap, initialAssignedNeumaticos]);
 
     useEffect(() => {
-        console.log("Assigned Neumaticos:", assignedNeumaticos);
+        // LOG para ver el estado local del modal
+        console.log('Assigned Neumaticos (estado local):', assignedNeumaticos);
     }, [assignedNeumaticos]);
 
     const [page, setPage] = useState(0);
@@ -366,7 +364,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     const filteredData = useMemo(() => {
         return data.filter(
             (neumatico) =>
-                neumatico.ESTADO_ASIGNACION === 'DISPONIBLE' &&
+                neumatico.TIPO_MOVIMIENTO === 'DISPONIBLE' &&
                 (neumatico.CODIGO.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     neumatico.MARCA.toLowerCase().includes(searchTerm.toLowerCase()))
         );
@@ -388,20 +386,30 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             return;
         }
         try {
-            // Usar la función centralizada de la API
             await Promise.all(
                 toAssign.map(([pos, neu]) => {
-                    const codigo = neu!.CODIGO ?? neu!.CODIGO_NEU;
-                    return asignarNeumatico({
+                    const codigo = Number(neu!.CODIGO ?? neu!.CODIGO_NEU);
+                    const remanente = typeof neu!.REMANENTE === 'string' ? parseFloat(neu!.REMANENTE) : (neu!.REMANENTE ?? 0);
+                    const presionAire = typeof neu!.PRESION_AIRE === 'string' ? parseFloat(neu!.PRESION_AIRE) : (neu!.PRESION_AIRE ?? 0);
+                    const torqueAplicado = typeof neu!.TORQUE_APLICADO === 'string' ? parseFloat(neu!.TORQUE_APLICADO) : (neu!.TORQUE_APLICADO ?? 0);
+                    const odometro = typeof neu!.ODOMETRO === 'string' ? parseFloat(neu!.ODOMETRO) : (neu!.ODOMETRO ?? kilometro);
+                    const payload = {
+                        CodigoNeumatico: codigo,
+                        Remanente: remanente,
+                        PresionAire: presionAire,
+                        TorqueAplicado: torqueAplicado,
                         Placa: placa,
                         Posicion: pos,
-                        CodigoNeumatico: codigo,
-                        Odometro: kilometraje,
-                        Observacion: "Asignado desde UI",
-                    });
+                        Odometro: odometro,
+                    };
+                    console.log('Enviando a asignarNeumatico:', payload);
+                    return asignarNeumatico(payload);
                 })
             );
             alert("Asignación completada.");
+            if (typeof onAssignedUpdate === 'function') {
+                await onAssignedUpdate(); // Notifica al padre para refrescar asignados
+            }
             onClose();
         } catch (e: any) {
             console.error(e);
@@ -577,15 +585,15 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                                     <TableCell>{neumatico?.CODIGO || '----'}</TableCell>
                                                     <TableCell>{neumatico?.MARCA || '----'}</TableCell>
                                                     <TableCell>{neumatico?.MEDIDA || '----'}</TableCell>
-                                                    <TableCell>{neumatico?.FECHA_ASIGNADO || '----'}</TableCell>
+                                                    <TableCell>{neumatico?.FECHA_ASIGNACION || neumatico?.FECHA_REGISTRO || '----'}</TableCell>
                                                     <TableCell>
-                                                        {neumatico?.ESTADO === 'ASIGNADO' ? (
+                                                        {neumatico?.TIPO_MOVIMIENTO === 'ASIGNADO' ? (
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                 <span>ASIGNADO</span>
                                                                 <CheckBoxIcon style={{ color: 'green' }} />
                                                             </div>
                                                         ) : (
-                                                            neumatico?.ESTADO || '----'
+                                                            neumatico?.TIPO_MOVIMIENTO || '----'
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
@@ -622,8 +630,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         <TableBody>
                                             {paginatedData.length > 0 ? (
                                                 paginatedData.map((neumatico) => {
-                                                    // 1️⃣ deshabilita si ya viene con ESTADO_ASIGNACION = 'ASIGNADO'
-                                                    const isDisabled = neumatico.ESTADO_ASIGNACION === 'ASIGNADO';
+                                                    // 1️⃣ deshabilita si ya viene con TIPO_MOVIMIENTO = 'ASIGNADO'
+                                                    const isDisabled = neumatico.TIPO_MOVIMIENTO === 'ASIGNADO';
 
                                                     return (
                                                         <TableRow
@@ -656,7 +664,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                                             <TableCell>{neumatico.DISEÑO}</TableCell>
                                                             <TableCell>{neumatico.REMANENTE}</TableCell>
                                                             <TableCell>{neumatico.MEDIDA}</TableCell>
-                                                            <TableCell>{neumatico.FECHA}</TableCell>
+                                                            <TableCell>{neumatico.FECHA_REGISTRO}</TableCell>
 
                                                             {/* 4️⃣ indicador de Estado */}
                                                             <TableCell align="center">
@@ -665,10 +673,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                                                         variant="determinate"
                                                                         value={
                                                                             typeof neumatico.ESTADO === 'string'
-                                                                                ? parseInt(
-                                                                                    neumatico.ESTADO.replace('%', ''),
-                                                                                    10
-                                                                                )
+                                                                                ? parseInt(neumatico.ESTADO.replace('%', ''), 10)
                                                                                 : neumatico.ESTADO
                                                                         }
                                                                         sx={{
@@ -731,4 +736,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     );
 };
 
+
 export default ModalAsignacionNeu;
+
+

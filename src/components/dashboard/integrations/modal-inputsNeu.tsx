@@ -6,19 +6,20 @@ import { useTheme } from '@mui/material/styles';
 interface ModalInputsNeuProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (data: { kilometraje: number; remanente: number; presionAire: number }) => void;
+    onSubmit: (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number }) => void;
 }
 
 const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit }) => {
-    const [kilometraje, setKilometraje] = React.useState<number>(0);
-    const [remanente, setRemanente] = React.useState<number>(0);
-    const [presionAire, setPresionAire] = React.useState<number>(0);
+    const [Odometro, setOdometro] = React.useState<number>(0);
+    const [Remanente, setRemanente] = React.useState<number>(0);
+    const [PresionAire, setPresionAire] = React.useState<number>(0);
+    const [TorqueAplicado, setTorqueAplicado] = React.useState<number>(0);
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
     const handleSubmit = () => {
-        onSubmit({ kilometraje, remanente, presionAire });
+        onSubmit({ Odometro, Remanente, PresionAire, TorqueAplicado });
         onClose();
     };
 
@@ -28,24 +29,31 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
             <DialogContent>
                 <Stack spacing={2}>
                     <TextField
-                        label="Kilometraje"
+                        label="Kilometro"
                         type="number"
-                        value={kilometraje}
-                        onChange={(e) => setKilometraje(Number(e.target.value))}
+                        value={Odometro}
+                        onChange={(e) => setOdometro(Number(e.target.value))}
                         fullWidth
                     />
                     <TextField
                         label="Remanente"
                         type="number"
-                        value={remanente}
+                        value={Remanente}
                         onChange={(e) => setRemanente(Number(e.target.value))}
                         fullWidth
                     />
                     <TextField
                         label="Presión de Aire"
                         type="number"
-                        value={presionAire}
+                        value={PresionAire}
                         onChange={(e) => setPresionAire(Number(e.target.value))}
+                        fullWidth
+                    />
+                    <TextField
+                        label="Torque"
+                        type="number"
+                        value={TorqueAplicado}
+                        onChange={(e) => setTorqueAplicado(Number(e.target.value))}
                         fullWidth
                     />
                     <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth>

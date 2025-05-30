@@ -5,6 +5,7 @@ interface Neumatico {
     POSICION: string;
     CODIGO_NEU?: string;
     CODIGO?: string;
+    POSICION_NEU?: string;
 }
 
 interface DiagramaVehiculoProps {
@@ -78,6 +79,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
                             backgroundColor: neumatico ? 'lightgreen' : 'transparent',
                             border: '2px solid #888',
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 'bold',
@@ -90,7 +92,13 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
                         onClick={() => onPosicionClick && onPosicionClick(neumatico)}
                         title={key + (neumatico ? ` - ${neumatico.CODIGO_NEU || neumatico.CODIGO || ''}` : '')}
                     >
-                        {key.replace('POS', '')}
+                        {neumatico ? (
+                            <span style={{ fontWeight: 'bold', fontSize: '10px', color: '#333' }}>
+                                {neumatico.CODIGO_NEU || neumatico.CODIGO}
+                            </span>
+                        ) : (
+                            key.replace('POS', '')
+                        )}
                     </Box>
                 );
             })}

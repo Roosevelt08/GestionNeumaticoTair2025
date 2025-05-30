@@ -65,8 +65,8 @@ export default function Page(): React.JSX.Element {
     COLOR: string;
     ANO: number;
     PROYECTO: string;
-    OPERACION?: string; 
-    KILOMETRAJE: number;
+    OPERACION?: string;
+    KILOMETRO: number;
   }
 
   const handleSnackbarClose = () => {
@@ -129,7 +129,7 @@ export default function Page(): React.JSX.Element {
             ...neumatico,
             CODIGO: neumatico.CODIGO_NEU || neumatico.CODIGO,
             DISEÑO: neumatico.DISEÑO || '',
-            FECHA: neumatico.FECHA || '',
+            FECHA_FABRICACION_COD: neumatico.FECHA_FABRICACION_COD || '',
           }));
         setNeumaticos(listaNeumaticos);
         setNeumaticosFiltrados(filtrados);
@@ -203,8 +203,8 @@ export default function Page(): React.JSX.Element {
 
         // Mapea los neumáticos asignados a sus posiciones
         const assigned = data.reduce((acc: { [key: string]: Neumatico | null }, neumatico: Neumatico) => {
-          if (neumatico.POSICION !== undefined) {
-            acc[neumatico.POSICION] = neumatico;
+          if (neumatico.POSICION_NEU !== undefined) {
+            acc[neumatico.POSICION_NEU] = neumatico;
           }
           return acc;
         }, {} as { [key: string]: Neumatico | null });
@@ -269,6 +269,22 @@ export default function Page(): React.JSX.Element {
     setPage(0);
   };
 
+  // 1. Agrega la función para refrescar asignados
+  const refreshAsignados = async () => {
+    if (vehiculo?.PLACA) {
+      const asignados = await obtenerNeumaticosAsignadosPorPlaca(vehiculo.PLACA);
+      setNeumaticosAsignados(asignados);
+    }
+  };
+
+  // Log para depuración ANTES del return, nunca dentro del JSX
+  console.log('Antes de abrir ModalAsignacionNeu:', {
+    neumaticosAsignados,
+    vehiculo,
+    openModal,
+    refreshAsignados
+  });
+
   return (
     <Stack spacing={3}>
       {/* <Stack direction="row" spacing={3}>
@@ -276,7 +292,7 @@ export default function Page(): React.JSX.Element {
           <Typography variant="h4">Asignación de Neumáticos</Typography>
         </Stack>
       </Stack> */}
-      <CompaniesFilters 
+      <CompaniesFilters
         onSearchChange={handleSearchChange}
         projectName={vehiculo?.PROYECTO || '—'}
         operationName={vehiculo?.OPERACION?.trim() || '—'}
@@ -294,98 +310,98 @@ export default function Page(): React.JSX.Element {
           <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
           </Stack>
 
-            <Stack direction="row" alignItems="center" spacing={3}>
-              {vehiculo && (
-                <>
-                  {/* Kilometraje */}
-                  <Box
-                    sx={{
-                      backgroundColor: '#e0f7fa',
-                      borderRadius: '8px',
-                      padding: '8px 16px',
-                      fontWeight: 'bold',
-                      color: 'black',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+          <Stack direction="row" alignItems="center" spacing={3}>
+            {vehiculo && (
+              <>
+                {/* Kilometraje */}
+                <Box
+                  sx={{
+                    backgroundColor: '#e0f7fa',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: 'bold',
+                    color: 'black',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  {`Último Kilometraje ${animatedKilometraje.toLocaleString()} km`}
+                </Box>
+                {/* Ícono de neumáticos */}
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  onClick={handleOpenModal}
+                >
+                  <img
+                    src="/assets/tires-icon.png"
+                    alt="Ícono de neumáticos"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: '0 0 0 0 rgba(0,0,0,0)',
                     }}
-                  >
-                    {`Último Kilometraje ${animatedKilometraje.toLocaleString()} km`}
-                  </Box>
-                  {/* Ícono de neumáticos */}
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={handleOpenModal}
-                  >
-                    <img
-                      src="/assets/tires-icon.png"
-                      alt="Ícono de neumáticos"
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        boxShadow: '0 0 0 0 rgba(0,0,0,0)',
-                      }}
-                      title="ASIGNAR NEUMÁTICO NUEVO"
-                      onMouseOver={e => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                        e.currentTarget.style.boxShadow = '0 4px 16px 0 #00bcd4';
-                      }}
-                      onMouseOut={e => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
-                      }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={() => setOpenInspeccionModal(true)}
-                  >
-                    <img
-                      src="/assets/neu_inspeccion.png"
-                      alt="Inspección neumáticos"
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        boxShadow: '0 0 0 0 rgba(0,0,0,0)',
-                      }}
-                      title="INSPECCIÓN DE NEUMÁTICOS"
-                      onMouseOver={e => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                        e.currentTarget.style.boxShadow = '0 4px 16px 0 #4caf50';
-                      }}
-                      onMouseOut={e => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
-                      }}
-                    />
-                  </Box>
-                  <Box
-                    sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                    onClick={() => setOpenMantenimientoModal(true)}
-                  >
-                    <img
-                      src="/assets/neu_matenimiento.png"
-                      alt="Mantenimiento neumático"
-                      style={{
-                        width: '40px',
-                        height: '40px',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        boxShadow: '0 0 0 0 rgba(0,0,0,0)',
-                      }}
-                      title="MANTENIMIENTO DE NEUMÁTICO"
-                      onMouseOver={e => {
-                        e.currentTarget.style.transform = 'scale(1.15)';
-                        e.currentTarget.style.boxShadow = '0 4px 16px 0 #ff9800';
-                      }}
-                      onMouseOut={e => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
-                      }}
-                    />
-                  </Box>
+                    title="ASIGNAR NEUMÁTICO NUEVO"
+                    onMouseOver={e => {
+                      e.currentTarget.style.transform = 'scale(1.15)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px 0 #00bcd4';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
+                    }}
+                  />
+                </Box>
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  onClick={() => setOpenInspeccionModal(true)}
+                >
+                  <img
+                    src="/assets/neu_inspeccion.png"
+                    alt="Inspección neumáticos"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: '0 0 0 0 rgba(0,0,0,0)',
+                    }}
+                    title="INSPECCIÓN DE NEUMÁTICOS"
+                    onMouseOver={e => {
+                      e.currentTarget.style.transform = 'scale(1.15)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px 0 #4caf50';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
+                    }}
+                  />
+                </Box>
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  onClick={() => setOpenMantenimientoModal(true)}
+                >
+                  <img
+                    src="/assets/neu_matenimiento.png"
+                    alt="Mantenimiento neumático"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                      boxShadow: '0 0 0 0 rgba(0,0,0,0)',
+                    }}
+                    title="MANTENIMIENTO DE NEUMÁTICO"
+                    onMouseOver={e => {
+                      e.currentTarget.style.transform = 'scale(1.15)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px 0 #ff9800';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
+                    }}
+                  />
+                </Box>
                 <Box
                   sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                   onClick={() => setOpenDeleteModal(true)}
@@ -448,7 +464,14 @@ export default function Page(): React.JSX.Element {
           <Box sx={{ mt: 4, textAlign: 'left', position: 'relative', width: '262px', height: '365px' }}>
             <DiagramaVehiculo
               layout="dashboard"
-              neumaticosAsignados={neumaticosAsignados.filter((n): n is Neumatico & { POSICION: string } => typeof n.POSICION === 'string')}
+              neumaticosAsignados={neumaticosAsignados
+                .filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0)
+                .map(n => ({
+                  POSICION: n.POSICION_NEU!,
+                  CODIGO: n.CODIGO,
+                  CODIGO_NEU: n.CODIGO_NEU,
+                }))
+              }
             />
           </Box>
         </Card>
@@ -477,13 +500,13 @@ export default function Page(): React.JSX.Element {
               <TableBody>
                 {neumaticosAsignados.length > 0 ? (
                   neumaticosAsignados.map((neumatico, index) => (
-                    <TableRow key={neumatico.ID}>
-                      <TableCell align="center">{neumatico.POSICION}</TableCell>
-                      <TableCell align="center">{neumatico.CODIGO_NEU}</TableCell>
+                    <TableRow key={neumatico.ID_ASIGNADO}>
+                      <TableCell align="center">{neumatico.POSICION_NEU}</TableCell>
+                      <TableCell align="center">{neumatico.CODIGO}</TableCell>
                       <TableCell align="center">{neumatico.MARCA}</TableCell>
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
-                      <TableCell align="center">{neumatico.REMANENTE}%</TableCell>
-                      <TableCell align="center">{neumatico.ESTADO}</TableCell>
+                      <TableCell align="center">{neumatico.REMANENTE ?? 0}%</TableCell>
+                      <TableCell align="center">{neumatico.ESTADO ?? ''}</TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -512,7 +535,7 @@ export default function Page(): React.JSX.Element {
                   boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
                 }}
               >
-                {`Disponibles: ${neumaticosFiltrados.filter(n => n.ESTADO_ASIGNACION === 'DISPONIBLE').length.toLocaleString()} Neumáticos`}
+                {`Disponibles: ${neumaticosFiltrados.filter(n => n.TIPO_MOVIMIENTO === 'DISPONIBLE').length.toLocaleString()} Neumáticos`}
               </Box>
             </Stack>
             <OutlinedInput
@@ -544,7 +567,7 @@ export default function Page(): React.JSX.Element {
               </TableHead>
               <TableBody>
                 {neumaticosFiltrados
-                  .filter(n => n.ESTADO_ASIGNACION === 'DISPONIBLE')
+                  .filter(n => n.TIPO_MOVIMIENTO === 'DISPONIBLE')
                   .slice(page * 5, page * 5 + 5)
                   .map((neumatico) => (
                     <TableRow key={neumatico.CODIGO}>
@@ -553,7 +576,7 @@ export default function Page(): React.JSX.Element {
                       <TableCell align="center">{neumatico.DISEÑO}</TableCell>
                       <TableCell align="center">{neumatico.REMANENTE}</TableCell>
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
-                      <TableCell align="center">{neumatico.FECHA}</TableCell>
+                      <TableCell align="center">{neumatico.FECHA_FABRICACION_COD}</TableCell>
                       <TableCell align="center">
                         <Box sx={{ position: 'relative', width: '100px' }}>
                           <LinearProgress
@@ -620,21 +643,20 @@ export default function Page(): React.JSX.Element {
         open={openModal}
         onClose={() => {
           handleCloseModal();
-          if (vehiculo?.PLACA) {
-            obtenerNeumaticosAsignadosPorPlaca(vehiculo.PLACA).then(setNeumaticosAsignados);
-          }
+          refreshAsignados(); // Refresca asignados al cerrar
         }}
         data={neumaticosFiltrados.map((neumatico) => ({
           ...neumatico,
-          CODIGO: neumatico.CODIGO_NEU ?? neumatico.CODIGO, // Usar CODIGO_NEU si existe, de lo contrario usar CODIGO
+          CODIGO: neumatico.CODIGO, // Ahora solo usar CODIGO
           DISEÑO: neumatico.DISEÑO ?? '', // Proveer un valor por defecto si falta
-          FECHA: neumatico.FECHA ?? '', // Proveer un valor por defecto si falta
+          FECHA_FABRICACION_COD: neumatico.FECHA_FABRICACION_COD ?? '', // Proveer un valor por defecto si falta
         }))}
-        assignedNeumaticos={neumaticosAsignados} // Pasar los neumáticos asignados
-        placa={vehiculo?.PLACA ?? ''} // Pasar la placa del vehículo
-        kilometraje={vehiculo?.KILOMETRAJE ?? 0}
+        assignedNeumaticos={neumaticosAsignados}
+        placa={vehiculo?.PLACA ?? ''}
+        kilometro={vehiculo?.KILOMETRO ?? 0}
+        onAssignedUpdate={refreshAsignados} // ¡IMPORTANTE!
       />
-      
+
       <ModalDeleteNeu
         open={openDeleteModal}
         onClose={() => setOpenDeleteModal(false)}
@@ -646,19 +668,26 @@ export default function Page(): React.JSX.Element {
         open={openInspeccionModal}
         onClose={() => setOpenInspeccionModal(false)}
         placa={vehiculo?.PLACA ?? ''}
-        neumaticosAsignados={neumaticosAsignados.filter((n): n is Neumatico & { POSICION: string } => typeof n.POSICION === 'string')}
+        // Cambia el filtro para usar POSICION_NEU en vez de POSICION
+        neumaticosAsignados={neumaticosAsignados
+          .filter((n): n is Neumatico & { POSICION_NEU: string } => typeof n.POSICION_NEU === 'string')
+          .map(n => ({
+            ...n,
+            POSICION: n.POSICION_NEU ?? '', // Asegura que POSICION esté presente
+          }))
+        }
         vehiculo={vehiculo ? {
           placa: vehiculo.PLACA,
           marca: vehiculo.MARCA,
           modelo: vehiculo.MODELO,
-          anio: vehiculo.ANO?.toString() ?? '',
+          anio: String(vehiculo.ANO),
           color: vehiculo.COLOR,
           proyecto: vehiculo.PROYECTO,
           operacion: vehiculo.OPERACION,
-          kilometraje: vehiculo.KILOMETRAJE
+          kilometro: vehiculo.KILOMETRO
         } : undefined}
         // Nueva prop para selección de neumático
-        onSeleccionarNeumatico={() => {}}
+        onSeleccionarNeumatico={() => { }}
       />
       <ModalMantenimientoNeu open={openMantenimientoModal} onClose={() => setOpenMantenimientoModal(false)} />
     </Stack>
