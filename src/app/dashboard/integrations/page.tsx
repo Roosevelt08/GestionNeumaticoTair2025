@@ -67,6 +67,7 @@ export default function Page(): React.JSX.Element {
     PROYECTO: string;
     OPERACION?: string;
     KILOMETRO: number;
+    KILOMETRAJE: number;
   }
 
   const handleSnackbarClose = () => {
@@ -653,7 +654,7 @@ export default function Page(): React.JSX.Element {
         }))}
         assignedNeumaticos={neumaticosAsignados}
         placa={vehiculo?.PLACA ?? ''}
-        kilometro={vehiculo?.KILOMETRO ?? 0}
+        kilometro={vehiculo?.KILOMETRO ?? vehiculo?.KILOMETRAJE ?? 0}
         onAssignedUpdate={refreshAsignados} // ¡IMPORTANTE!
       />
 

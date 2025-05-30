@@ -102,6 +102,7 @@ interface DropZoneProps {
     isAssigned: boolean;
     assignedNeumaticos: Record<string, Neumatico | null>;
     setAssignedNeumaticos: React.Dispatch<React.SetStateAction<Record<string, Neumatico | null>>>;
+    kilometro: number; // <-- Agregado
 }
 
 // Elimina la interfaz ModalInputsNeuData, ya que no es compatible con el componente ModalInputsNeu
@@ -112,6 +113,7 @@ const DropZone: React.FC<DropZoneProps> = ({
     isAssigned,
     assignedNeumaticos,
     setAssignedNeumaticos,
+    kilometro, // <-- Agregado
 }) => {
     const [menuAnchor, setMenuAnchor] = React.useState<null | HTMLElement>(null);
     const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
@@ -252,6 +254,10 @@ const DropZone: React.FC<DropZoneProps> = ({
                 open={inputsModalOpen}
                 onClose={() => setInputsModalOpen(false)}
                 onSubmit={handleInputsModalSubmit}
+                initialRemanente={assignedNeumaticos[position]?.REMANENTE ? Number(assignedNeumaticos[position]?.REMANENTE) : 0}
+                initialOdometro={typeof kilometro === 'number' ? kilometro : 0}
+                initialPresionAire={assignedNeumaticos[position]?.PRESION_AIRE ? Number(assignedNeumaticos[position]?.PRESION_AIRE) : 0}
+                initialTorqueAplicado={assignedNeumaticos[position]?.TORQUE_APLICADO ? Number(assignedNeumaticos[position]?.TORQUE_APLICADO) : 0}
             />
         </div>
     );
@@ -465,6 +471,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         isAssigned={!!assignedNeumaticos.POS01}
                                         assignedNeumaticos={assignedNeumaticos}
                                         setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
                                     />
                                 </Box>
                                 <Box
@@ -481,6 +488,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         isAssigned={!!assignedNeumaticos.POS02}
                                         assignedNeumaticos={assignedNeumaticos}
                                         setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
                                     />
                                 </Box>
                                 <Box
@@ -497,6 +505,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         isAssigned={!!assignedNeumaticos.POS03}
                                         assignedNeumaticos={assignedNeumaticos}
                                         setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
                                     />
                                 </Box>
                                 <Box
@@ -513,6 +522,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         isAssigned={!!assignedNeumaticos.POS04}
                                         assignedNeumaticos={assignedNeumaticos}
                                         setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
                                     />
                                 </Box>
                                 <img
