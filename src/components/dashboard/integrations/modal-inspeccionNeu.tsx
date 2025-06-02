@@ -50,12 +50,14 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     codigo: '',
     posicion: '',
     medida: '',
+    diseño: '',
     remanente: '',
     tipo_movimiento: '',
     estado: '',
     observacion: '',
     presion_aire: '',
     torque: '',
+    fecha_inspeccion: '', // <-- Agregado para evitar el error
   });
   const [openMantenimiento, setOpenMantenimiento] = useState(false);
   const [neuAsignados, setNeuAsignados] = useState<any[]>([]);
@@ -82,12 +84,14 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       codigo: neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '',
       posicion: neuFull?.POSICION ?? neumatico.POSICION ?? '',
       medida: neuFull?.MEDIDA ?? neumatico.MEDIDA ?? '',
+      diseño: neuFull?.DISEÑO ?? neumatico.DISEÑO ?? '',
       remanente: neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '',
       tipo_movimiento: neuFull?.TIPO_MOVIMIENTO ?? '',
       estado: neuFull?.ESTADO ?? neumatico.ESTADO ?? '',
       observacion: neuFull?.OBSERVACION ?? neumatico.OBSERVACION ?? '',
       presion_aire: neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '',
       torque: neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '',
+      fecha_inspeccion: neuFull?.FECHA_INSPECCION ?? '',
     });
     if (onSeleccionarNeumatico) onSeleccionarNeumatico(neumatico);
   };
@@ -166,12 +170,13 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                 </Box>
               </Card>
               <Card sx={{ p: 2 }}>
-                <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                  <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
-                  <TextField label="Marca" name="marca" size="small" value={formValues.marca} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
+                <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2 }}>
                   <TextField label="Código" name="codigo" size="small" value={formValues.codigo} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
-                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
+                  <TextField label="Marca" name="marca" size="small" value={formValues.marca} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
                   <TextField label="Medida" name="medida" size="small" value={formValues.medida} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
+                  <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.diseño.length + 3}ch` } }} />
+                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
+                  <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
                   <TextField label="Remanente" name="remanente" size="small" value={formValues.remanente} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }} />
                   <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} />
                   <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} />
@@ -182,8 +187,23 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     value="INSPECCION"
                     InputProps={{ readOnly: true, style: { minWidth: `${'INSPECCION'.length + 3}ch` } }}
                   />
+                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} />
                   <TextField label="Estado" name="estado" size="small" value={formValues.estado} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.estado.length + 3}ch` } }} />
-                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} />
+                  {/* Campo visual de Fecha de inspección */}
+                  <TextField
+                    label="Fecha y hora de inspección"
+                    name="fecha_inspeccion"
+                    size="small"
+                    type="datetime-local"
+                    value={
+                      formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)
+                    }
+                    onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                    sx={{ gridColumn: 'span 2' }}
+                  />
+                  
                 </Box>
               </Card>
             </Stack>
