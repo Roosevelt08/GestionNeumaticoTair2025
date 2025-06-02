@@ -63,6 +63,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const [neuAsignados, setNeuAsignados] = useState<any[]>([]);
   const [kmError, setKmError] = React.useState(false);
   const [Odometro, setOdometro] = React.useState(0);
+  const [remanenteError, setRemanenteError] = React.useState(false);
   const initialOdometro = React.useMemo(() => {
     const num = Number(formValues.kilometro);
     return isNaN(num) ? 0 : num;
@@ -105,7 +106,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   // Manejar apertura de mantenimiento y cierre de inspección
   const handleAbrirMantenimiento = () => {
     onClose();
-    setTimeout(() => setOpenMantenimiento(true), 300); 
+    setTimeout(() => setOpenMantenimiento(true), 300);
   };
 
   // Manejar cambios en los inputs
@@ -127,9 +128,21 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     setKmError(false);
   }, [initialOdometro]);
 
+  // Calcular el porcentaje de remanente
+  const valorTotalRemanente = Number(neumaticoSeleccionado?.REMANENTE);
+  const valorActualRemanente = Number(formValues.remanente);
+  const porcentajeRemanente =
+    valorTotalRemanente > 0 && !isNaN(valorActualRemanente)
+      ? ((valorActualRemanente * 100) / valorTotalRemanente).toFixed(2) + '%'
+      : '';
+
   const handleGuardarInspeccion = () => {
     if (Odometro < initialOdometro) {
       alert(`El número de kilometro no puede ser menor al actual (${initialOdometro.toLocaleString()} km).`);
+      return;
+    }
+    if (remanenteError) {
+      alert(`El valor de remanente no puede ser mayor a ${neumaticoSeleccionado?.REMANENTE}`);
       return;
     }
     // Aquí iría la lógica real de guardado
@@ -210,7 +223,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                       setKmError(value < initialOdometro);
                     }}
                     error={kmError}
-                    //helperText={kmError ? `No puede ser menor a ${initialOdometro.toLocaleString()} km` : `Kilometro: ${initialOdometro.toLocaleString()} km`}
+                    helperText={
+                      kmError
+                        ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
+                        : `Kilometro: ${initialOdometro.toLocaleString()} km`
+                    }
                     InputProps={{
                       inputProps: { min: initialOdometro },
                       sx: {
@@ -225,7 +242,27 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     }}
                     fullWidth
                   />
-                  <TextField label="Remanente" name="remanente" size="small" value={formValues.remanente} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }} />
+                  <TextField
+                    label="Remanente"
+                    name="remanente"
+                    size="small"
+                    value={formValues.remanente}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setFormValues(prev => ({ ...prev, remanente: value }));
+                      const valorTotal = Number(neumaticoSeleccionado?.REMANENTE);
+                      setRemanenteError(valorTotal > 0 && Number(value) > valorTotal);
+                    }}
+                    error={remanenteError}
+                    helperText={
+                      remanenteError
+                        ? `No puede ser mayor a ${neumaticoSeleccionado?.REMANENTE}`
+                        : (neumaticoSeleccionado?.REMANENTE !== undefined && neumaticoSeleccionado?.REMANENTE !== null
+                          ? `Remanente: ${neumaticoSeleccionado.REMANENTE}`
+                          : '')
+                    }
+                    inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }}
+                  />
                   <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} />
                   <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} />
                   <TextField
@@ -236,8 +273,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     InputProps={{ readOnly: true, style: { minWidth: `${'INSPECCION'.length + 3}ch` } }}
                   />
                   <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} />
-                  <TextField label="Estado" name="estado" size="small" value={formValues.estado} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.estado.length + 3}ch` } }} />
-                  {/* Campo visual de Fecha de inspección */}
+                  <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} />
                   <TextField
                     label="Fecha y hora de inspección"
                     name="fecha_inspeccion"
@@ -251,7 +287,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     inputProps={{ max: new Date().toISOString().slice(0, 16) }}
                     sx={{ gridColumn: 'span 2' }}
                   />
-                  
+
                 </Box>
               </Card>
             </Stack>
@@ -266,9 +302,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               width: '100%'
             }}>
               <Box sx={{ position: 'relative', width: '370px', height: '430px' }}>
-                <DiagramaVehiculo 
-                  neumaticosAsignados={neumaticosAsignados} 
-                  layout="modal" 
+                <DiagramaVehiculo
+                  neumaticosAsignados={neumaticosAsignados}
+                  layout="modal"
                   onPosicionClick={handleSeleccionarNeumatico}
                   onMantenimientoClick={() => {
                     setOpenMantenimiento(true);
