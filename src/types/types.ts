@@ -16,4 +16,5 @@ export interface Neumatico {
   PRESION_AIRE?: number; // Presión de aire del neumático (opcional)
   TORQUE_APLICADO?: number; // Torque aplicado al neumático (opcional)
   ODOMETRO?: number; // Kilometraje del neumático (opcional)
+  ID_MOVIMIENTO?: string; // ID del movimiento asociado al neumático (opcional)
 }

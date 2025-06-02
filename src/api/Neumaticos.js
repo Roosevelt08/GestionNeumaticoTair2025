@@ -142,3 +142,14 @@ export const listarNeumaticosAsignados = async (placa) => {
     throw error;
   }
 };
+
+// Obtener el último movimiento de cada neumático instalado en una placa
+export const obtenerUltimosMovimientosPorPlaca = async (placa) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-movimiento/ultimos/${placa}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error en obtenerUltimosMovimientosPorPlaca:', error);
+    throw error;
+  }
+};

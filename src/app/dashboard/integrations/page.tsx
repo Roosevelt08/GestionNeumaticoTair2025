@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca, obtenerCantidadAutosDisponibles } from '@/api/Neumaticos';
+import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca, obtenerCantidadAutosDisponibles, obtenerUltimosMovimientosPorPlaca } from '@/api/Neumaticos';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -245,13 +245,13 @@ export default function Page(): React.JSX.Element {
     if (!vehiculo || !vehiculo.PLACA) return;
 
     // Llamamos al endpoint y actualizamos el estado
-    obtenerNeumaticosAsignadosPorPlaca(vehiculo.PLACA)
+    obtenerUltimosMovimientosPorPlaca(vehiculo.PLACA)
       .then((arr) => {
-        console.log("Asignados tras cargar vehículo:", arr);
         setNeumaticosAsignados(arr);
       })
       .catch((err) => {
-        console.error("Error trayendo neumáticos asignados:", err);
+        console.error("Error trayendo últimos movimientos de neumáticos:", err);
+        setNeumaticosAsignados([]);
       });
   }, [vehiculo]);
 
@@ -273,7 +273,7 @@ export default function Page(): React.JSX.Element {
   // 1. Agrega la función para refrescar asignados
   const refreshAsignados = async () => {
     if (vehiculo?.PLACA) {
-      const asignados = await obtenerNeumaticosAsignadosPorPlaca(vehiculo.PLACA);
+      const asignados = await obtenerUltimosMovimientosPorPlaca(vehiculo.PLACA);
       setNeumaticosAsignados(asignados);
     }
   };
@@ -501,13 +501,13 @@ export default function Page(): React.JSX.Element {
               <TableBody>
                 {neumaticosAsignados.length > 0 ? (
                   neumaticosAsignados.map((neumatico, index) => (
-                    <TableRow key={neumatico.ID_ASIGNADO}>
+                    <TableRow key={neumatico.ID_MOVIMIENTO || `${neumatico.CODIGO}-${neumatico.POSICION_NEU}` }>
                       <TableCell align="center">{neumatico.POSICION_NEU}</TableCell>
                       <TableCell align="center">{neumatico.CODIGO}</TableCell>
                       <TableCell align="center">{neumatico.MARCA}</TableCell>
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
-                      <TableCell align="center">{neumatico.REMANENTE ?? 0}%</TableCell>
-                      <TableCell align="center">{neumatico.ESTADO ?? ''}</TableCell>
+                      <TableCell align="center">{neumatico.REMANENTE ?? 0}</TableCell>
+                      <TableCell align="center">{neumatico.ESTADO !== undefined && neumatico.ESTADO !== null ? `${neumatico.ESTADO}%` : ''}</TableCell>
                     </TableRow>
                   ))
                 ) : (
