@@ -61,6 +61,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   });
   const [openMantenimiento, setOpenMantenimiento] = useState(false);
   const [neuAsignados, setNeuAsignados] = useState<any[]>([]);
+  const [kmError, setKmError] = React.useState(false);
+  const [Odometro, setOdometro] = React.useState(0);
+  const initialOdometro = React.useMemo(() => {
+    const num = Number(formValues.kilometro);
+    return isNaN(num) ? 0 : num;
+  }, [formValues.kilometro]);
 
   // Cargar datos de neu_asignado al abrir el modal
   React.useEffect(() => {
@@ -114,6 +120,21 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       setFormValues((prev) => ({ ...prev, kilometro: vehiculo.kilometro?.toString() ?? '' }));
     }
   }, [open, vehiculo?.kilometro]);
+
+  // Sincronizar Odometro con el valor inicial al abrir modal o cambiar neumático
+  React.useEffect(() => {
+    setOdometro(initialOdometro);
+    setKmError(false);
+  }, [initialOdometro]);
+
+  const handleGuardarInspeccion = () => {
+    if (Odometro < initialOdometro) {
+      alert(`El número de kilometro no puede ser menor al actual (${initialOdometro.toLocaleString()} km).`);
+      return;
+    }
+    // Aquí iría la lógica real de guardado
+    // ...
+  };
 
   return (
     <>
@@ -171,12 +192,39 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               </Card>
               <Card sx={{ p: 2 }}>
                 <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2 }}>
-                  <TextField label="Código" name="codigo" size="small" value={formValues.codigo} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
-                  <TextField label="Marca" name="marca" size="small" value={formValues.marca} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
-                  <TextField label="Medida" name="medida" size="small" value={formValues.medida} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
-                  <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.diseño.length + 3}ch` } }} />
-                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
-                  <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
+                  <TextField label="Código" name="codigo" size="small" value={formValues.codigo} inputProps={{ readOnly: true, style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
+                  <TextField label="Marca" name="marca" size="small" value={formValues.marca} inputProps={{ readOnly: true, style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
+                  <TextField label="Medida" name="medida" size="small" value={formValues.medida} inputProps={{ readOnly: true, style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
+                  <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} inputProps={{ readOnly: true, style: { minWidth: `${formValues.diseño.length + 3}ch` } }} />
+                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
+                  <TextField
+                    label="Kilometro"
+                    type="number"
+                    name="kilometro"
+                    size="small"
+                    value={Odometro}
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      setOdometro(value);
+                      setFormValues(prev => ({ ...prev, kilometro: value.toString() }));
+                      setKmError(value < initialOdometro);
+                    }}
+                    error={kmError}
+                    //helperText={kmError ? `No puede ser menor a ${initialOdometro.toLocaleString()} km` : `Kilometro: ${initialOdometro.toLocaleString()} km`}
+                    InputProps={{
+                      inputProps: { min: initialOdometro },
+                      sx: {
+                        'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
+                          WebkitAppearance: 'none',
+                          margin: 0,
+                        },
+                        'input[type=number]': {
+                          MozAppearance: 'textfield',
+                        },
+                      },
+                    }}
+                    fullWidth
+                  />
                   <TextField label="Remanente" name="remanente" size="small" value={formValues.remanente} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }} />
                   <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} />
                   <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} />
@@ -265,7 +313,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
           <Button onClick={onClose} color="primary" variant="contained">
             Cerrar
           </Button>
-          <Button color="success" variant="contained" sx={{ ml: 1 }}>
+          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleGuardarInspeccion}>
             Guardar inspección
           </Button>
         </DialogActions>
