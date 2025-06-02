@@ -94,6 +94,20 @@ export const asignarNeumatico = async ({ Placa, Posicion, CodigoNeumatico, Odome
   }
 };
 
+// Guardar inspección de neumático
+export const guardarInspeccion = async (data) => {
+  try {
+    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/inspeccion`, data);
+    return response.data;
+  } catch (error) {
+    // Si el backend responde con error 400/500, devolver el mensaje de error
+    if (error.response && error.response.data && error.response.data.error) {
+      throw new Error(error.response.data.error);
+    }
+    throw error;
+  }
+};
+
 // Obtener la cantidad total de neumáticos
 export const obtenerCantidadNeumaticos = async () => {
   const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-neumaticos/cantidad`, { withCredentials: true });

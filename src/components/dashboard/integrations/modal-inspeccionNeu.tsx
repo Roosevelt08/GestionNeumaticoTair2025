@@ -11,9 +11,13 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
-import { useState } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import ModalMantenimientoNeu from './modal-mantenimientoNeu';
-import { listarNeumaticosAsignados } from '../../../api/Neumaticos';
+import { listarNeumaticosAsignados, guardarInspeccion, Neumaticos } from '../../../api/Neumaticos';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import axios from 'axios';
+import { UserContext } from '../../../contexts/user-context';
 
 interface Neumatico {
   POSICION: string;
@@ -42,6 +46,7 @@ interface ModalInpeccionNeuProps {
 }
 
 const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico }) => {
+  const { user } = useContext(UserContext) || {};
   const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
   const [formValues, setFormValues] = useState({
     kilometro: '',
@@ -64,6 +69,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const [kmError, setKmError] = React.useState(false);
   const [Odometro, setOdometro] = React.useState(0);
   const [remanenteError, setRemanenteError] = React.useState(false);
+  const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [poNeumaticos, setPoNeumaticos] = useState<any[]>([]);
+  const [poNeumaticoSeleccionado, setPoNeumaticoSeleccionado] = useState<any | null>(null);
   const initialOdometro = React.useMemo(() => {
     const num = Number(formValues.kilometro);
     return isNaN(num) ? 0 : num;
@@ -78,28 +86,40 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     }
   }, [open, placa]);
 
+  // Cargar todos los po_neumaticos al abrir el modal (solo una vez)
+  useEffect(() => {
+    if (open) {
+      Neumaticos().then(setPoNeumaticos).catch(() => setPoNeumaticos([]));
+    }
+  }, [open]);
+
   // Cuando se selecciona un neumático, llenar el formulario con datos completos de neu_asignado
   const handleSeleccionarNeumatico = (neumatico: any) => {
     setNeumaticoSeleccionado(neumatico);
-    // Buscar datos completos en neuAsignados
     const neuFull = neuAsignados.find(n => n.POSICION === neumatico.POSICION || n.POSICION_NEU === neumatico.POSICION);
-    console.log('neuFull seleccionado:', neuFull); // <-- Depuración para ver los datos reales
+    // Buscar datos completos en po_neumaticos por código
+    const codigoBuscar = neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '';
+    const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(codigoBuscar));
+    setPoNeumaticoSeleccionado(poNeu || null);
     setFormValues({
-      kilometro: (neuFull?.ODOMETRO?.toString() ?? neuFull?.KILOMETRO?.toString() ?? vehiculo?.kilometro?.toString() ?? ''),
+      kilometro: (neuFull?.ODOMETRO?.toString() ?? neuFull?.KILOMETRO?.toString() ?? ''),
       marca: neuFull?.MARCA ?? neumatico.MARCA ?? '',
       modelo: neuFull?.MODELO ?? neumatico.MODELO ?? '',
-      codigo: neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '',
+      codigo: codigoBuscar,
       posicion: neuFull?.POSICION ?? neumatico.POSICION ?? '',
       medida: neuFull?.MEDIDA ?? neumatico.MEDIDA ?? '',
       diseño: neuFull?.DISEÑO ?? neumatico.DISEÑO ?? '',
       remanente: neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '',
-      tipo_movimiento: neuFull?.TIPO_MOVIMIENTO ?? '',
+      tipo_movimiento: 'INSPECCION',
       estado: neuFull?.ESTADO ?? neumatico.ESTADO ?? '',
       observacion: neuFull?.OBSERVACION ?? neumatico.OBSERVACION ?? '',
       presion_aire: neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '',
       torque: neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '',
-      fecha_inspeccion: neuFull?.FECHA_INSPECCION ?? '',
+      fecha_inspeccion: '',
     });
+    setOdometro(Number(neuFull?.ODOMETRO ?? neuFull?.KILOMETRO ?? 0));
+    setKmError(false);
+    setRemanenteError(false);
     if (onSeleccionarNeumatico) onSeleccionarNeumatico(neumatico);
   };
 
@@ -136,17 +156,90 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       ? ((valorActualRemanente * 100) / valorTotalRemanente).toFixed(2) + '%'
       : '';
 
-  const handleGuardarInspeccion = () => {
-    if (Odometro < initialOdometro) {
-      alert(`El número de kilometro no puede ser menor al actual (${initialOdometro.toLocaleString()} km).`);
+  const handleGuardarInspeccion = async () => {
+    if (Odometro < Number(formValues.kilometro)) {
+      setSnackbar({ open: true, message: `El número de kilometro no puede ser menor al actual (${formValues.kilometro} km).`, severity: 'error' });
       return;
     }
     if (remanenteError) {
-      alert(`El valor de remanente no puede ser mayor a ${neumaticoSeleccionado?.REMANENTE}`);
+      setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${neumaticoSeleccionado?.REMANENTE}`, severity: 'error' });
       return;
     }
-    // Aquí iría la lógica real de guardado
-    // ...
+    if (!neumaticoSeleccionado) {
+      setSnackbar({ open: true, message: 'Debe seleccionar un neumático.', severity: 'error' });
+      return;
+    }
+    // Validar que poNeumaticoSeleccionado esté presente
+    if (!poNeumaticoSeleccionado) {
+      setSnackbar({ open: true, message: 'No se encontraron los datos completos del neumático.', severity: 'error' });
+      return;
+    }
+    // Fechas
+    const now = new Date();
+    const fechaActual = now.toISOString();
+    const fechaInspeccion = formValues.fecha_inspeccion ? new Date(formValues.fecha_inspeccion).toISOString() : fechaActual;
+    // Armar el payload completo
+    // Formatear fechas para campos tipo DATE (YYYY-MM-DD)
+    const formatDate = (dateStr: string) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 10);
+    };
+    // Formatear TIMESTAMP (formato DB2: 'YYYY-MM-DD HH:mm:ss')
+    const formatTimestamp = (dateStr: string) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      // Reemplazar 'T' por espacio y quitar milisegundos
+      return d.toISOString().slice(0, 19).replace('T', ' ');
+    };
+    // Estado como decimal (porcentaje con decimales, por ejemplo 94.44)
+    const estadoDecimal = (() => {
+      const val = porcentajeRemanente?.toString().replace('%', '').trim();
+      const n = parseFloat(val);
+      return isNaN(n) ? 0 : n;
+    })();
+    const datosEnviar = {
+      // ID_INSPECCION eliminado, lo maneja la base de datos
+      CODIGO: String(formValues.codigo || ''),
+      MARCA: String(formValues.marca || ''),
+      MEDIDA: String(formValues.medida || ''),
+      DISEÑO: String(formValues.diseño || ''),
+      REMANENTE: parseInt(formValues.remanente) || 0,
+      PR: String(poNeumaticoSeleccionado.PR || ''),
+      CARGA: String(poNeumaticoSeleccionado.CARGA || ''),
+      VELOCIDAD: String(poNeumaticoSeleccionado.VELOCIDAD || ''),
+      FECHA_FABRICACION: String(poNeumaticoSeleccionado.FECHA_FABRICACION_COD || ''),
+      RQ: String(poNeumaticoSeleccionado.RQ || ''),
+      OC: String(poNeumaticoSeleccionado.OC || ''),
+      PROYECTO: String(vehiculo?.proyecto || ''),
+      COSTO: poNeumaticoSeleccionado.COSTO ? parseFloat(poNeumaticoSeleccionado.COSTO) : 0,
+      OBSERVACION: String(formValues.observacion || ''),
+      PROVEEDOR: String(poNeumaticoSeleccionado.PROVEEDOR || ''),
+      FECHA_REGISTRO: formatDate(formValues.fecha_inspeccion) || formatDate(new Date().toISOString()),
+      FECHA_COMPRA: formatDate(poNeumaticoSeleccionado.FECHA_COMPRA),
+      USUARIO_SUPER: String(user?.name || user?.usuario || ''),
+      TIPO_MOVIMIENTO: String(formValues.tipo_movimiento || ''),
+      PRESION_AIRE: formValues.presion_aire ? parseFloat(formValues.presion_aire) : 0,
+      TORQUE_APLICADO: formValues.torque ? parseFloat(formValues.torque) : 0,
+      ESTADO: estadoDecimal,
+      PLACA: String(placa || ''),
+      POSICION_NEU: String(formValues.posicion || ''),
+      FECHA_ASIGNACION: formatDate(new Date().toISOString()),
+      KILOMETRO: formValues.kilometro ? parseInt(formValues.kilometro) : 0,
+      FECHA_MOVIMIENTO: formatTimestamp(new Date().toISOString()),
+    };
+    console.log('Datos enviados a guardarInspeccion:', datosEnviar);
+    console.log('Payload FINAL enviado a guardarInspeccion (formato backend):', JSON.stringify(datosEnviar, null, 2));
+    try {
+      await guardarInspeccion(datosEnviar);
+      setSnackbar({ open: true, message: 'Inspección guardada correctamente.', severity: 'success' });
+      onClose();
+    } catch (error: any) {
+      const msg = error?.message || 'Error al guardar la inspección.';
+      setSnackbar({ open: true, message: msg, severity: 'error' });
+    }
   };
 
   return (
@@ -361,6 +454,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         neumaticosAsignados={neumaticosAsignados}
         vehiculo={vehiculo}
       />
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar(s => ({ ...s, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert onClose={() => setSnackbar(s => ({ ...s, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
