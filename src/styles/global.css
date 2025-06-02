@@ -31,3 +31,15 @@ html {
 body {
   height: 100%;
 }
+
+/* Tooltips para acciones rápidas en DiagramaVehiculo */
+.tooltip-mantenimiento:hover > img + .tooltip-mantenimiento,
+.tooltip-eliminar:hover > img + .tooltip-eliminar {
+  opacity: 1 !important;
+}
+
+/* Alternativa: mostrar tooltip al hacer hover sobre el span */
+span:hover > .tooltip-mantenimiento,
+span:hover > .tooltip-eliminar {
+  opacity: 1 !important;
+}

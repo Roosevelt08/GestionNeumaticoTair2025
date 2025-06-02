@@ -117,3 +117,14 @@ export const obtenerCantidadAutosDisponibles = async () => {
   const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/vehiculo/cantidad`, { withCredentials: true });
   return response.data.cantidad;
 };
+
+// Obtener la lista de neumáticos asignados (tabla NEU_ASIGNADO) por placa (nuevo endpoint directo)
+export const listarNeumaticosAsignados = async (placa) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-asignados/${placa}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error en listarNeumaticosAsignados:', error);
+    throw error;
+  }
+};

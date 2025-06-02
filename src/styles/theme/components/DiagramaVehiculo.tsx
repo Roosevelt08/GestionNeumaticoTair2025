@@ -28,7 +28,7 @@ const posiciones = {
     ],
 };
 
-const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void }> = ({ neumaticosAsignados, layout = 'dashboard', onPosicionClick }) => {
+const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void; soloMantenimiento?: boolean; onMantenimientoClick?: () => void }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, soloMantenimiento, ...props }) => {
     const pos = posiciones[layout];
     return (
         <Box
@@ -63,6 +63,39 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
                         }
                 }
             />
+            {/* Acciones rápidas solo en modal de mantenimiento */}
+            {layout === 'modal' && soloMantenimiento && (
+                <>
+                    <img src="/assets/rotar.png" alt="Rotar" title="Rotar" style={{ position: 'absolute', top: '100px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                    <img src="/assets/reparar.png" alt="Reparar" title="Reparar" style={{ position: 'absolute', top: '160px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                    <img src="/assets/recaucar.png" alt="Recauchar" title="Recauchar" style={{ position: 'absolute', top: '220px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                    <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                    <img src="/assets/dar de baja.png" alt="Dar de baja" title="Dar de baja" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                </>
+            )}
+            {/* Acciones rápidas solo en modal de inspección */}
+            {layout === 'modal' && !soloMantenimiento && (
+                <>
+                    <Box component="span" sx={{ position: 'absolute', top: '270px', left: '40px', zIndex: 2 }}>
+                        <img
+                            src="/assets/neu_matenimiento.png"
+                            alt="Mantenimiento neumático"
+                            style={{ width: '60px', height: '60px', objectFit: 'contain', cursor: 'pointer' }}
+                            onClick={props.onMantenimientoClick}
+                        />
+                        <Box sx={{ position: 'absolute', top: '-28px', left: '0', width: 'max-content', bgcolor: 'rgba(0,0,0,0.8)', color: 'white', px: 1, py: 0.5, borderRadius: 1, fontSize: 12, pointerEvents: 'none', opacity: 0, transition: 'opacity 0.2s', zIndex: 10 }} className="tooltip-mantenimiento">
+                            Abrir mantenimiento
+                        </Box>
+                    </Box>
+                    <Box component="span" sx={{ position: 'absolute', top: '340px', left: '40px', zIndex: 2 }}>
+                        <img src="/assets/trash-icon.png" alt="Eliminar neumático" style={{ width: '60px', height: '60px', objectFit: 'contain', cursor: 'pointer' }} />
+                        <Box sx={{ position: 'absolute', top: '-28px', left: '0', width: 'max-content', bgcolor: 'rgba(0,0,0,0.8)', color: 'white', px: 1, py: 0.5, borderRadius: 1, fontSize: 12, pointerEvents: 'none', opacity: 0, transition: 'opacity 0.2s', zIndex: 10 }} className="tooltip-eliminar">
+                            Eliminar neumático
+                        </Box>
+                    </Box>
+                </>
+            )}
+
             {pos.map(({ key, top, left }) => {
                 const neumatico = neumaticosAsignados.find(n => n.POSICION === key);
                 return (

@@ -4,109 +4,221 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Card from '@mui/material/Card';
+import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
-import Divider from '@mui/material/Divider';
+import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
+import { useState } from 'react';
 
-interface ModalMantenimientoNeuProps {
-    open: boolean;
-    onClose: () => void;
+interface Neumatico {
+  POSICION: string;
 }
 
-const ModalMantenimientoNeu: React.FC<ModalMantenimientoNeuProps> = ({ open, onClose }) => {
-    const [tipoMantenimiento, setTipoMantenimiento] = React.useState('');
-    const [fecha, setFecha] = React.useState('');
-    const [km, setKm] = React.useState('');
-    const [observaciones, setObservaciones] = React.useState('');
+interface Vehiculo {
+  placa: string;
+  marca: string;
+  modelo: string;
+  anio: string;
+  color?: string;
+  proyecto?: string;
+  operacion?: string;
+  kilometro?: number;
+}
 
-    return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ fontWeight: 'bold', color: '#ff9800' }}>Mantenimiento de Neumático</DialogTitle>
-            <DialogContent>
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gridTemplateRows: '180px 1fr',
-                        gap: 2,
-                        mb: 2,
-                    }}
+interface ModalInpeccionNeuProps {
+  open: boolean;
+  onClose: () => void;
+  placa: string;
+  neumaticosAsignados: Neumatico[];
+  vehiculo?: Vehiculo;
+  onSeleccionarNeumatico?: (neumatico: any) => void; // NUEVO
+}
+
+const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico }) => {
+  const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
+  const [formValues, setFormValues] = useState({
+    kilometro: '',
+    marca: '',
+    modelo: '',
+    codigo: '',
+    posicion: '',
+    medida: '',
+    remanente: '',
+    tipo_movimiento: '',
+    estado: '',
+    observacion: '', // Asegura que 'observacion' esté en el estado
+  });
+
+  // Cuando se selecciona un neumático, llenar el formulario
+  const handleSeleccionarNeumatico = (neumatico: any) => {
+    setNeumaticoSeleccionado(neumatico);
+    setFormValues({
+      kilometro: vehiculo?.kilometro?.toString() ?? '',
+      marca: neumatico.MARCA ?? '',
+      modelo: neumatico.MODELO ?? '',
+      codigo: neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '',
+      posicion: neumatico.POSICION ?? '',
+      medida: neumatico.MEDIDA ?? '',
+      remanente: neumatico.REMANENTE?.toString() ?? '',
+      tipo_movimiento: '',
+      estado: neumatico.ESTADO ?? '',
+      observacion: '',
+    });
+    if (onSeleccionarNeumatico) onSeleccionarNeumatico(neumatico);
+  };
+
+  // Manejar cambios en los inputs
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+      {/* <DialogTitle sx={{ fontWeight: 'bold', color: '#388e3c' }}>Inspección de Neumáticos</DialogTitle> */}
+      <DialogContent>
+        <Stack direction="row" spacing={2}>
+          <Stack direction="column" spacing={2} sx={{ flex: 1, width: '1px' }}>
+            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
+              <Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>Datos del vehículo en Mantenimiento</Typography>
+                {vehiculo ? (
+                  <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2, mb: 1 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Marca</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.marca}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Modelo</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.modelo}</Typography>
+                    </Box>
+                    {vehiculo?.proyecto && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Proyecto</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.proyecto}</Typography>
+                      </Box>
+                    )}
+                    {vehiculo?.operacion && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Operación</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.operacion}</Typography>
+                      </Box>
+                    )}
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Año</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.anio}</Typography>
+                    </Box>
+                    {vehiculo?.color && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Color</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.color}</Typography>
+                      </Box>
+                    )}
+                    {vehiculo?.kilometro !== undefined && (
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Kilometraje</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.kilometro.toLocaleString()} km</Typography>
+                      </Box>
+                    )}
+                  </Box>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">No hay datos del vehículo.</Typography>
+                )}
+              </Box>
+            </Card>
+            <Card sx={{ p: 2 }}>
+              <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+                <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
+                <TextField label="Marca" name="marca" size="small" value={formValues.marca} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
+                <TextField label="Código" name="codigo" size="small" value={formValues.codigo} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
+                <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
+                <TextField label="Medida" name="medida" size="small" value={formValues.medida} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
+                <TextField label="Remanente" name="remanente" size="small" value={formValues.remanente} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }} />
+                <TextField
+                  select
+                  label="Tipo Movimiento"
+                  name="tipo_movimiento"
+                  size="small"
+                  value={formValues.tipo_movimiento}
+                  onChange={handleInputChange}
+                  inputProps={{ style: { minWidth: `${formValues.tipo_movimiento.length + 3}ch` } }}
                 >
-                    {/* Formulario de mantenimiento */}
-                    <Box sx={{ gridColumn: '1/2', gridRow: '1/2', bgcolor: '#f9f6f2', borderRadius: 2, p: 2, boxShadow: 2 }}>
-                        <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>Registrar mantenimiento</Typography>
-                        <TextField
-                            label="Fecha"
-                            type="date"
-                            size="small"
-                            fullWidth
-                            value={fecha}
-                            onChange={e => setFecha(e.target.value)}
-                            sx={{ mb: 2 }}
-                            InputLabelProps={{ shrink: true }}
-                        />
-                        <TextField
-                            label="Tipo de mantenimiento"
-                            select
-                            size="small"
-                            fullWidth
-                            value={tipoMantenimiento}
-                            onChange={e => setTipoMantenimiento(e.target.value)}
-                            sx={{ mb: 2 }}
-                        >
-                            <MenuItem value="Rotación">Rotación</MenuItem>
-                            <MenuItem value="Reparación">Reparación</MenuItem>
-                            <MenuItem value="Reemplazo">Reemplazo</MenuItem>
-                            <MenuItem value="Inspección">Inspección</MenuItem>
-                        </TextField>
-                        <TextField
-                            label="Kilometraje"
-                            type="number"
-                            size="small"
-                            fullWidth
-                            value={km}
-                            onChange={e => setKm(e.target.value)}
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
-                            label="Observaciones"
-                            size="small"
-                            fullWidth
-                            multiline
-                            minRows={2}
-                            value={observaciones}
-                            onChange={e => setObservaciones(e.target.value)}
-                        />
-                    </Box>
-                    {/* Detalles del neumático o acciones rápidas */}
-                    <Box sx={{ gridColumn: '2/3', gridRow: '1/2', bgcolor: '#f9f6f2', borderRadius: 2, p: 2, boxShadow: 2 }}>
-                        <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>Detalle del neumático</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Aquí puedes mostrar información relevante del neumático seleccionado, como número de serie, estado, etc.
-                        </Typography>
-                        {/* Puedes agregar más detalles o acciones aquí */}
-                    </Box>
-                    {/* Historial de mantenimientos */}
-                    <Box sx={{ gridColumn: '1/3', gridRow: '2/3', bgcolor: '#f9f6f2', borderRadius: 2, p: 2, boxShadow: 2 }}>
-                        <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>Historial de mantenimientos</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            (Aquí se listarán los mantenimientos previos del neumático)
-                        </Typography>
-                    </Box>
-                </Box>
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose} color="primary" variant="contained">
-                    Cerrar
-                </Button>
-                <Button color="warning" variant="contained" sx={{ ml: 1 }}>
-                    Guardar mantenimiento
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
+                  <MenuItem value="">Seleccionar</MenuItem>
+                  <MenuItem value="ROTAR">ROTAR</MenuItem>
+                  <MenuItem value="REPARAR">REPARAR</MenuItem>
+                  <MenuItem value="RECAUCHAR">RECAUCHAR</MenuItem>
+                  <MenuItem value="DESASIGNAR">DESASIGNAR</MenuItem>
+                  <MenuItem value="DAR DE BAJA">DAR DE BAJA</MenuItem>
+                </TextField>
+                <TextField label="Estado" name="estado" size="small" value={formValues.estado} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.estado.length + 3}ch` } }} />
+                <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} />
+              </Box>
+            </Card>
+          </Stack>
+          {/* Columna derecha: Imagen o visualización */}
+          <Card sx={{
+            flex: 0.5,
+            p: 2,
+            position: 'relative',
+            boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+            maxWidth: 400,
+            minWidth: 320,
+            width: '100%'
+          }}>
+            <Box sx={{ position: 'relative', width: '370px', height: '430px' }}>
+              <DiagramaVehiculo 
+                neumaticosAsignados={neumaticosAsignados} 
+                layout="modal" 
+                onPosicionClick={handleSeleccionarNeumatico}
+                soloMantenimiento={true}
+              />
+              <img
+                src="/assets/placa.png"
+                alt="Placa"
+                style={{
+                  width: '120px',
+                  height: '60px',
+                  objectFit: 'contain',
+                  position: 'absolute',
+                  top: '10px',
+                  right: '68px',
+                  zIndex: 2,
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '24px',
+                  right: '68px',
+                  zIndex: 3,
+                  color: 'black',
+                  padding: '2px 8px',
+                  borderRadius: '5px',
+                  fontFamily: 'Arial, sans-serif',
+                  fontWeight: 'bold',
+                  fontSize: '24px',
+                  textAlign: 'center',
+                }}
+              >
+                {placa}
+              </Box>
+            </Box>
+          </Card>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose} color="primary" variant="contained">
+          Cerrar
+        </Button>
+        <Button color="success" variant="contained" sx={{ ml: 1 }}>
+          Guardar inspección
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 };
 
-export default ModalMantenimientoNeu;
+export default ModalInpeccionNeu;

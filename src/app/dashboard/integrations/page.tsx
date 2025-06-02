@@ -279,12 +279,12 @@ export default function Page(): React.JSX.Element {
   };
 
   // Log para depuración ANTES del return, nunca dentro del JSX
-  console.log('Antes de abrir ModalAsignacionNeu:', {
-    neumaticosAsignados,
-    vehiculo,
-    openModal,
-    refreshAsignados
-  });
+  // console.log('Antes de abrir ModalAsignacionNeu:', {
+  //   neumaticosAsignados,
+  //   vehiculo,
+  //   openModal,
+  //   refreshAsignados
+  // });
 
   return (
     <Stack spacing={3}>
@@ -675,6 +675,8 @@ export default function Page(): React.JSX.Element {
           .map(n => ({
             ...n,
             POSICION: n.POSICION_NEU ?? '', // Asegura que POSICION esté presente
+            presion_aire: n.PRESION_AIRE ?? '',
+            torque: n.TORQUE_APLICADO ?? '',
           }))
         }
         vehiculo={vehiculo ? {
@@ -690,7 +692,31 @@ export default function Page(): React.JSX.Element {
         // Nueva prop para selección de neumático
         onSeleccionarNeumatico={() => { }}
       />
-      <ModalMantenimientoNeu open={openMantenimientoModal} onClose={() => setOpenMantenimientoModal(false)} />
+      <ModalMantenimientoNeu
+        open={openMantenimientoModal}
+        onClose={() => setOpenMantenimientoModal(false)}
+        placa={vehiculo?.PLACA ?? ''}
+        neumaticosAsignados={neumaticosAsignados
+          .filter((n): n is Neumatico & { POSICION_NEU: string } => typeof n.POSICION_NEU === 'string')
+          .map(n => ({
+            ...n,
+            POSICION: n.POSICION_NEU ?? '',
+            presion_aire: n.PRESION_AIRE ?? '',
+            torque: n.TORQUE_APLICADO ?? '',
+          }))
+        }
+        vehiculo={vehiculo ? {
+          placa: vehiculo.PLACA,
+          marca: vehiculo.MARCA,
+          modelo: vehiculo.MODELO,
+          anio: String(vehiculo.ANO),
+          color: vehiculo.COLOR,
+          proyecto: vehiculo.PROYECTO,
+          operacion: vehiculo.OPERACION,
+          kilometro: vehiculo.KILOMETRO,
+        } : undefined}
+        onSeleccionarNeumatico={() => { }}
+      />
     </Stack>
   );
 }
