@@ -13,7 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 import { useState, useContext, useEffect } from 'react';
 import ModalMantenimientoNeu from './modal-mantenimientoNeu';
-import { listarNeumaticosAsignados, guardarInspeccion, Neumaticos } from '../../../api/Neumaticos';
+import { listarNeumaticosAsignados, guardarInspeccion, Neumaticos, obtenerUltimosMovimientosPorCodigo } from '../../../api/Neumaticos';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import axios from 'axios';
@@ -72,6 +72,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [poNeumaticos, setPoNeumaticos] = useState<any[]>([]);
   const [poNeumaticoSeleccionado, setPoNeumaticoSeleccionado] = useState<any | null>(null);
+  const [remanenteAsignacion, setRemanenteAsignacion] = useState<number | null>(null);
+  const [remanenteUltimoMovimiento, setRemanenteUltimoMovimiento] = useState<number | null>(null);
+  const [remanenteAsignacionReal, setRemanenteAsignacionReal] = useState<number | null>(null);
   const initialOdometro = React.useMemo(() => {
     const num = Number(formValues.kilometro);
     return isNaN(num) ? 0 : num;
@@ -94,32 +97,76 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   }, [open]);
 
   // Cuando se selecciona un neumático, llenar el formulario con datos completos de neu_asignado
-  const handleSeleccionarNeumatico = (neumatico: any) => {
+  const handleSeleccionarNeumatico = async (neumatico: any) => {
     setNeumaticoSeleccionado(neumatico);
     const neuFull = neuAsignados.find(n => n.POSICION === neumatico.POSICION || n.POSICION_NEU === neumatico.POSICION);
     // Buscar datos completos en po_neumaticos por código
     const codigoBuscar = neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '';
+    console.log('poNeumaticos:', poNeumaticos);
+    console.log('codigoBuscar:', codigoBuscar);
     const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(codigoBuscar));
+    console.log('poNeu encontrado:', poNeu);
     setPoNeumaticoSeleccionado(poNeu || null);
+    // Obtener el último movimiento real desde el backend
+    let remanenteUltimoMovimiento = '';
+    let presionUltimoMovimiento = '';
+    let torqueUltimoMovimiento = '';
+    let kilometroUltimoMovimiento = '';
+    try {
+      const movimientos = await obtenerUltimosMovimientosPorCodigo(codigoBuscar);
+      if (Array.isArray(movimientos) && movimientos.length > 0) {
+        const mov = movimientos[0];
+        remanenteUltimoMovimiento = mov?.REMANENTE?.toString() ?? '';
+        presionUltimoMovimiento = mov?.PRESION_AIRE?.toString() ?? '';
+        torqueUltimoMovimiento = mov?.TORQUE_APLICADO?.toString() ?? '';
+        kilometroUltimoMovimiento = mov?.KILOMETRO?.toString() ?? '';
+        // Buscar el movimiento de ASIGNACION más reciente
+        const asignacion = movimientos.find((m: any) => m.TIPO_MOVIMIENTO === 'ASIGNADO' || m.TIPO_MOVIMIENTO === 'ASIGNACION');
+        setRemanenteAsignacionReal(asignacion ? Number(asignacion.REMANENTE) : null);
+      } else {
+        remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '';
+        presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '';
+        torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '';
+        kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? neumatico.KILOMETRO?.toString() ?? '';
+        // Si no hay movimientos de asignación, usar el REMANENTE de poNeumaticos como referencia inicial
+        setRemanenteAsignacionReal(poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : null);
+      }
+    } catch (e) {
+      remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '';
+      presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '';
+      torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '';
+      kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? neumatico.KILOMETRO?.toString() ?? '';
+      // Si hay error, usar el REMANENTE de poNeumaticos como referencia inicial
+      setRemanenteAsignacionReal(poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : null);
+    }
+    setRemanenteUltimoMovimiento(remanenteUltimoMovimiento ? Number(remanenteUltimoMovimiento) : null);
     setFormValues({
-      kilometro: (neuFull?.ODOMETRO?.toString() ?? neuFull?.KILOMETRO?.toString() ?? ''),
+      kilometro: kilometroUltimoMovimiento || (neuFull?.ODOMETRO?.toString() ?? neuFull?.KILOMETRO?.toString() ?? ''),
       marca: neuFull?.MARCA ?? neumatico.MARCA ?? '',
       modelo: neuFull?.MODELO ?? neumatico.MODELO ?? '',
       codigo: codigoBuscar,
       posicion: neuFull?.POSICION ?? neumatico.POSICION ?? '',
       medida: neuFull?.MEDIDA ?? neumatico.MEDIDA ?? '',
       diseño: neuFull?.DISEÑO ?? neumatico.DISEÑO ?? '',
-      remanente: neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '',
+      remanente: remanenteUltimoMovimiento,
       tipo_movimiento: 'INSPECCION',
       estado: neuFull?.ESTADO ?? neumatico.ESTADO ?? '',
       observacion: neuFull?.OBSERVACION ?? neumatico.OBSERVACION ?? '',
-      presion_aire: neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '',
-      torque: neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '',
+      presion_aire: presionUltimoMovimiento,
+      torque: torqueUltimoMovimiento,
       fecha_inspeccion: '',
     });
-    setOdometro(Number(neuFull?.ODOMETRO ?? neuFull?.KILOMETRO ?? 0));
+    setOdometro(Number(kilometroUltimoMovimiento || neuFull?.ODOMETRO || neuFull?.KILOMETRO || 0));
     setKmError(false);
     setRemanenteError(false);
+    // Buscar el remanente de la última ASIGNACIÓN (puede seguir igual)
+    let remanenteRef = null;
+    if (neuFull?.MOVIMIENTOS && Array.isArray(neuFull.MOVIMIENTOS)) {
+      const asignacion = neuFull.MOVIMIENTOS.filter((m: any) => m.TIPO_MOVIMIENTO === 'ASIGNACION')
+        .sort((a: any, b: any) => new Date(b.FECHA_MOVIMIENTO).getTime() - new Date(a.FECHA_MOVIMIENTO).getTime())[0];
+      remanenteRef = asignacion?.REMANENTE ?? null;
+    }
+    setRemanenteAsignacion(remanenteRef !== null ? Number(remanenteRef) : (poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : Number(neuFull?.REMANENTE ?? neumatico.REMANENTE ?? 0)));
     if (onSeleccionarNeumatico) onSeleccionarNeumatico(neumatico);
   };
 
@@ -148,12 +195,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     setKmError(false);
   }, [initialOdometro]);
 
-  // Calcular el porcentaje de remanente
-  const valorTotalRemanente = Number(neumaticoSeleccionado?.REMANENTE);
+  // Calcular el porcentaje de remanente respecto a la última ASIGNACIÓN REAL
+  const valorReferenciaRemanente = remanenteAsignacionReal !== null ? remanenteAsignacionReal : (remanenteAsignacion ?? Number(neumaticoSeleccionado?.REMANENTE));
   const valorActualRemanente = Number(formValues.remanente);
   const porcentajeRemanente =
-    valorTotalRemanente > 0 && !isNaN(valorActualRemanente)
-      ? ((valorActualRemanente * 100) / valorTotalRemanente).toFixed(2) + '%'
+    valorReferenciaRemanente > 0 && !isNaN(valorActualRemanente)
+      ? ((valorActualRemanente * 100) / valorReferenciaRemanente).toFixed(2) + '%'
       : '';
 
   const handleGuardarInspeccion = async () => {
@@ -162,7 +209,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       return;
     }
     if (remanenteError) {
-      setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${neumaticoSeleccionado?.REMANENTE}`, severity: 'error' });
+      setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${valorReferenciaRemanente}` , severity: 'error' });
       return;
     }
     if (!neumaticoSeleccionado) {
@@ -343,16 +390,19 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     onChange={e => {
                       const value = e.target.value;
                       setFormValues(prev => ({ ...prev, remanente: value }));
-                      const valorTotal = Number(neumaticoSeleccionado?.REMANENTE);
-                      setRemanenteError(valorTotal > 0 && Number(value) > valorTotal);
+                      // Validar contra el remanente original Y el último remanente registrado
+                      const valueNum = Number(value);
+                      const error = (
+                        (remanenteAsignacionReal !== undefined && remanenteAsignacionReal !== null && valueNum > Number(remanenteAsignacionReal)) ||
+                        (remanenteUltimoMovimiento !== undefined && remanenteUltimoMovimiento !== null && valueNum > Number(remanenteUltimoMovimiento))
+                      );
+                      setRemanenteError(error);
                     }}
                     error={remanenteError}
                     helperText={
                       remanenteError
-                        ? `No puede ser mayor a ${neumaticoSeleccionado?.REMANENTE}`
-                        : (neumaticoSeleccionado?.REMANENTE !== undefined && neumaticoSeleccionado?.REMANENTE !== null
-                          ? `Remanente: ${neumaticoSeleccionado.REMANENTE}`
-                          : '')
+                        ? `Solo puedes ingresar un valor igual o menor al remanente original (${remanenteAsignacionReal ?? poNeumaticoSeleccionado?.REMANENTE ?? '-'}) y al último registrado (${remanenteUltimoMovimiento ?? '-'})`
+                        : `Remanente original: ${remanenteAsignacionReal ?? poNeumaticoSeleccionado?.REMANENTE ?? '-'}`
                     }
                     inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }}
                   />

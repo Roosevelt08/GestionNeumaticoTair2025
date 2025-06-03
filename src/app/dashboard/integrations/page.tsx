@@ -507,7 +507,52 @@ export default function Page(): React.JSX.Element {
                       <TableCell align="center">{neumatico.MARCA}</TableCell>
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
                       <TableCell align="center">{neumatico.REMANENTE ?? 0}</TableCell>
-                      <TableCell align="center">{neumatico.ESTADO !== undefined && neumatico.ESTADO !== null ? `${neumatico.ESTADO}%` : ''}</TableCell>
+                      <TableCell align="center">
+                        {typeof neumatico.ESTADO === 'number' || (typeof neumatico.ESTADO === 'string' && neumatico.ESTADO !== '') ? (
+                          <Box sx={{ position: 'relative', width: '120px' }}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO}
+                              sx={{
+                                height: 20,
+                                borderRadius: 5,
+                                backgroundColor: '#eee',
+                                boxShadow: '0 0 0 1.5px #222',
+                                '& .MuiLinearProgress-bar': {
+                                  backgroundColor:
+                                    (typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO) < 39
+                                      ? '#d32f2f'
+                                      : (typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO) < 79
+                                      ? '#ffa726'
+                                      : '#2e7d32',
+                                  borderRadius: 5,
+                                },
+                              }}
+                            />
+                            <Typography
+                              variant="caption"
+                              fontWeight="bold"
+                              sx={{
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                top: 0,
+                                bottom: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#000', // negro puro
+                                fontWeight: 'bold',
+                                fontSize: 13,
+                                letterSpacing: 0.5,
+                                textShadow: '0 1px 2px rgba(255,255,255,0.15)'
+                              }}
+                            >
+                              {typeof neumatico.ESTADO === 'string' ? neumatico.ESTADO.replace('%', '') : neumatico.ESTADO}%
+                            </Typography>
+                          </Box>
+                        ) : ''}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -579,40 +624,50 @@ export default function Page(): React.JSX.Element {
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
                       <TableCell align="center">{neumatico.FECHA_FABRICACION_COD}</TableCell>
                       <TableCell align="center">
-                        <Box sx={{ position: 'relative', width: '100px' }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={
-                              typeof neumatico.ESTADO === 'string'
-                                ? parseInt(neumatico.ESTADO.replace('%', ''), 10)
-                                : neumatico.ESTADO
-                            }
-                            sx={{
-                              height: 20,
-                              borderRadius: 5,
-                              [`& .MuiLinearProgress-bar`]: {
-                                backgroundColor: 'green',
-                              },
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              width: '100%',
-                              height: '100%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white',
-                              fontWeight: 'bold',
-                            }}
-                          >
-                            {`${neumatico.ESTADO}%`}
-                          </Typography>
-                        </Box>
+                        {typeof neumatico.ESTADO === 'number' || (typeof neumatico.ESTADO === 'string' && neumatico.ESTADO !== '') ? (
+                          <Box sx={{ position: 'relative', width: '180px' }}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO}
+                              sx={{
+                                height: 16,
+                                borderRadius: 5,
+                                backgroundColor: '#eee',
+                                boxShadow: '0 0 0 1.5px #222',
+                                '& .MuiLinearProgress-bar': {
+                                  backgroundColor:
+                                    (typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO) < 39
+                                      ? '#d32f2f'
+                                      : (typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO) < 79
+                                      ? '#ffa726'
+                                      : '#2e7d32',
+                                  borderRadius: 5,
+                                },
+                              }}
+                            />
+                            <Typography
+                              variant="caption"
+                              fontWeight="bold"
+                              sx={{
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                top: 0,
+                                bottom: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#000', // negro puro
+                                fontWeight: 'bold',
+                                fontSize: 13,
+                                letterSpacing: 0.5,
+                                textShadow: '0 1px 2px rgba(255,255,255,0.15)'
+                              }}
+                            >
+                              {typeof neumatico.ESTADO === 'string' ? neumatico.ESTADO.replace('%', '') : neumatico.ESTADO}%
+                            </Typography>
+                          </Box>
+                        ) : ''}
                       </TableCell>
                     </TableRow>
                   ))}

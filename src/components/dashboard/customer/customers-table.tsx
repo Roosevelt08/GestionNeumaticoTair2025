@@ -156,12 +156,12 @@ export function CustomersTable({
                   <TableCell>{row.TIPO_MOVIMIENTO}</TableCell>
                   <TableCell align="center">
                     {typeof estado === 'number' ? (
-                      <Box sx={{ width: 80, position: 'relative' }}>
+                      <Box sx={{ width: '120px', position: 'relative' }}>
                         <LinearProgress
                           variant="determinate"
                           value={estado}
                           sx={{
-                            height: 16,
+                            height: 20,
                             borderRadius: 5,
                             backgroundColor: '#eee',
                             boxShadow: '0 0 0 1.5px #222', // Borde oscuro
@@ -184,11 +184,11 @@ export function CustomersTable({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#fff',
+                            color: '#000',
                             fontWeight: 'bold',
                             fontSize: 13,
                             letterSpacing: 0.5,
-                            textShadow: '0 1px 2px rgba(0,0,0,0.25)'
+                            textShadow: '0 1px 2px rgba(255,255,255,0.15)'
                           }}
                         >
                           {estado}%
