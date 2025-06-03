@@ -471,6 +471,7 @@ export default function Page(): React.JSX.Element {
                   POSICION: n.POSICION_NEU!,
                   CODIGO: n.CODIGO,
                   CODIGO_NEU: n.CODIGO_NEU,
+                  ESTADO: n.ESTADO, 
                 }))
               }
             />
@@ -710,7 +711,7 @@ export default function Page(): React.JSX.Element {
         assignedNeumaticos={neumaticosAsignados}
         placa={vehiculo?.PLACA ?? ''}
         kilometro={vehiculo?.KILOMETRO ?? vehiculo?.KILOMETRAJE ?? 0}
-        onAssignedUpdate={refreshAsignados} // ¡IMPORTANTE!
+        onAssignedUpdate={refreshAsignados} 
       />
 
       <ModalDeleteNeu
@@ -729,9 +730,10 @@ export default function Page(): React.JSX.Element {
           .filter((n): n is Neumatico & { POSICION_NEU: string } => typeof n.POSICION_NEU === 'string')
           .map(n => ({
             ...n,
-            POSICION: n.POSICION_NEU ?? '', // Asegura que POSICION esté presente
+            POSICION: n.POSICION_NEU ?? '',
             presion_aire: n.PRESION_AIRE ?? '',
             torque: n.TORQUE_APLICADO ?? '',
+            ESTADO: n.ESTADO, // <-- AGREGADO
           }))
         }
         vehiculo={vehiculo ? {
@@ -758,6 +760,7 @@ export default function Page(): React.JSX.Element {
             POSICION: n.POSICION_NEU ?? '',
             presion_aire: n.PRESION_AIRE ?? '',
             torque: n.TORQUE_APLICADO ?? '',
+            ESTADO: n.ESTADO, // <-- AGREGADO
           }))
         }
         vehiculo={vehiculo ? {

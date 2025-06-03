@@ -6,6 +6,7 @@ interface Neumatico {
     CODIGO_NEU?: string;
     CODIGO?: string;
     POSICION_NEU?: string;
+    ESTADO?: string | number;
 }
 
 interface DiagramaVehiculoProps {
@@ -28,7 +29,7 @@ const posiciones = {
     ],
 };
 
-const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void; soloMantenimiento?: boolean; onMantenimientoClick?: () => void }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, soloMantenimiento, ...props }) => {
+const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void; soloMantenimiento?: boolean; onMantenimientoClick?: () => void; onRotarClick?: () => void }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, soloMantenimiento, onRotarClick, ...props }) => {
     const pos = posiciones[layout];
     return (
         <Box
@@ -66,7 +67,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
             {/* Acciones rápidas solo en modal de mantenimiento */}
             {layout === 'modal' && soloMantenimiento && (
                 <>
-                    <img src="/assets/rotar.png" alt="Rotar" title="Rotar" style={{ position: 'absolute', top: '100px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                    <img src="/assets/rotar.png" alt="Rotar" title="Rotar" style={{ position: 'absolute', top: '100px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onRotarClick} />
                     <img src="/assets/reparar.png" alt="Reparar" title="Reparar" style={{ position: 'absolute', top: '160px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
                     <img src="/assets/recaucar.png" alt="Recauchar" title="Recauchar" style={{ position: 'absolute', top: '220px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
                     <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
@@ -98,6 +99,19 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
 
             {pos.map(({ key, top, left }) => {
                 const neumatico = neumaticosAsignados.find(n => n.POSICION === key);
+                // Determinar color según el estado
+                let estado = undefined;
+                if (neumatico && neumatico.ESTADO !== undefined && neumatico.ESTADO !== null && neumatico.ESTADO !== '') {
+                    estado = typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO;
+                }
+                let bgColor = 'transparent';
+                if (estado !== undefined && !isNaN(estado)) {
+                    if (estado < 39) bgColor = '#d32f2f';
+                    else if (estado < 79) bgColor = '#ffa726';
+                    else bgColor = '#2e7d32';
+                } else if (neumatico) {
+                    bgColor = 'lightgreen'; // fallback si no hay estado pero sí neumático
+                }
                 return (
                     <Box
                         key={key}
@@ -109,7 +123,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
                             width: '26px',
                             height: '58px',
                             borderRadius: '15px',
-                            backgroundColor: neumatico ? 'lightgreen' : 'transparent',
+                            backgroundColor: bgColor,
                             border: '2px solid #888',
                             display: 'flex',
                             flexDirection: 'column',

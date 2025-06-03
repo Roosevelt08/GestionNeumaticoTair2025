@@ -55,6 +55,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         observacion: '',
         fecha_inspeccion: '',
     });
+    const [soloRotar, setSoloRotar] = useState(false);
 
     // Cuando se selecciona un neumático, llenar el formulario
     const handleSeleccionarNeumatico = (neumatico: any) => {
@@ -140,45 +141,82 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                         <Card sx={{ p: 2 }}>
                             <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
                                 <TextField label="Código" name="codigo" size="small" value={formValues.codigo} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
-                                <TextField label="Marca" name="marca" size="small" value={formValues.marca} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
-                                <TextField label="Medida" name="medida" size="small" value={formValues.medida} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
-                                <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} inputProps={{ readOnly: true, style: { minWidth: `${formValues.diseño.length + 3}ch` } }} />
-                                <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
                                 <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
-                                <TextField label="Remanente" name="remanente" size="small" value={formValues.remanente} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }} />
-                                <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} />
-                                <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} />
                                 <TextField
                                     select
-                                    label="Tipo Movimiento"
-                                    name="tipo_movimiento"
+                                    label="POS-INICIAL"
+                                    name="possicionincial"
                                     size="small"
-                                    value={formValues.tipo_movimiento}
+                                    value={formValues.posicion}
                                     onChange={handleInputChange}
-                                    inputProps={{ style: { minWidth: `${formValues.tipo_movimiento.length + 3}ch` } }}
+                                    inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }}
                                 >
                                     <MenuItem value="">Seleccionar</MenuItem>
-                                    <MenuItem value="ROTAR">ROTAR</MenuItem>
-                                    <MenuItem value="REPARAR">REPARAR</MenuItem>
-                                    <MenuItem value="RECAUCHAR">RECAUCHAR</MenuItem>
-                                    <MenuItem value="DESASIGNAR">DESASIGNAR</MenuItem>
-                                    <MenuItem value="DAR DE BAJA">DAR DE BAJA</MenuItem>
+                                    <MenuItem value="POS01">POS01</MenuItem>
+                                    <MenuItem value="POS02">POS02</MenuItem>
+                                    <MenuItem value="POS03">POS03</MenuItem>
+                                    <MenuItem value="POS04">POS04</MenuItem>
+                                    <MenuItem value="REP01">REP01</MenuItem>
                                 </TextField>
-                                <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} />
-                                <TextField label="Estado" name="estado" size="small" value={formValues.estado} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.estado.length + 3}ch` } }} />
+                                <TextField label="Motivo" name="Motivo" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} />
                                 <TextField
-                                    label="Fecha y hora de inspección"
-                                    name="fecha_inspeccion"
+                                    select
+                                    label="POS0-FINAL"
+                                    name="possicionfin"
                                     size="small"
-                                    type="datetime-local"
-                                    value={
-                                        formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)
-                                    }
-                                    onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
-                                    InputLabelProps={{ shrink: true }}
-                                    inputProps={{ max: new Date().toISOString().slice(0, 16) }}
-                                    sx={{ gridColumn: 'span 2' }}
-                                />
+                                    value={formValues.posicion}
+                                    onChange={handleInputChange}
+                                    inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }}
+                                >
+                                    <MenuItem value="">Seleccionar</MenuItem>
+                                    <MenuItem value="POS01">POS01</MenuItem>
+                                    <MenuItem value="POS02">POS02</MenuItem>
+                                    <MenuItem value="POS03">POS03</MenuItem>
+                                    <MenuItem value="POS04">POS04</MenuItem>
+                                    <MenuItem value="REP01">REP01</MenuItem>
+                                </TextField>
+                                {!soloRotar && (
+                                    <>
+                                        <TextField label="Medida" name="medida" size="small" value={formValues.medida} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
+                                        <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} inputProps={{ readOnly: true, style: { minWidth: `${formValues.diseño.length + 3}ch` } }} />
+                                        <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
+                                        <TextField label="Kilometro" name="kilometro" type="number" size="small" value={formValues.kilometro} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.kilometro.length + 3}ch` } }} />
+                                        <TextField label="Remanente" name="remanente" size="small" value={formValues.remanente} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }} />
+                                        <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} />
+                                        <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} />
+                                        <TextField
+                                            select
+                                            label="Tipo Movimiento"
+                                            name="tipo_movimiento"
+                                            size="small"
+                                            value={formValues.tipo_movimiento}
+                                            onChange={handleInputChange}
+                                            inputProps={{ style: { minWidth: `${formValues.tipo_movimiento.length + 3}ch` } }}
+                                        >
+                                            <MenuItem value="">Seleccionar</MenuItem>
+                                            <MenuItem value="ROTAR">ROTAR</MenuItem>
+                                            <MenuItem value="REPARAR">REPARAR</MenuItem>
+                                            <MenuItem value="RECAUCHAR">RECAUCHAR</MenuItem>
+                                            <MenuItem value="DESASIGNAR">DESASIGNAR</MenuItem>
+                                            <MenuItem value="DAR DE BAJA">DAR DE BAJA</MenuItem>
+                                        </TextField>
+                                        <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} />
+                                        <TextField label="Estado" name="estado" size="small" value={formValues.estado} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.estado.length + 3}ch` } }} />
+                                        <TextField
+                                            label="Fecha y hora de inspección"
+                                            name="fecha_inspeccion"
+                                            size="small"
+                                            type="datetime-local"
+                                            value={
+                                                formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)
+                                            }
+                                            onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                                            InputLabelProps={{ shrink: true }}
+                                            inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                                            sx={{ gridColumn: 'span 2' }}
+                                        />
+                                    </>
+                                )}
                             </Box>
                         </Card>
                     </Stack>
@@ -198,6 +236,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                 layout="modal"
                                 onPosicionClick={handleSeleccionarNeumatico}
                                 soloMantenimiento={true}
+                                onRotarClick={() => setSoloRotar(true)}
                             />
                             <img
                                 src="/assets/placa.png"
