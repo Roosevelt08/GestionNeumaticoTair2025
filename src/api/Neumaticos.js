@@ -153,3 +153,14 @@ export const obtenerUltimosMovimientosPorPlaca = async (placa) => {
     throw error;
   }
 };
+
+// Obtener el último movimiento de cada posición de un neumático por su código
+export const obtenerUltimosMovimientosPorCodigo = async (codigo) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/po-movimiento/ultimos-codigo/${codigo}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error en obtenerUltimosMovimientosPorCodigo:', error);
+    throw error;
+  }
+};

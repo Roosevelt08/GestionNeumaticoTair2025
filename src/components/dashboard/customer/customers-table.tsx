@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 
 import { useSelection } from '@/hooks/use-selection';
+import { obtenerUltimosMovimientosPorPlaca, obtenerUltimosMovimientosPorCodigo } from '@/api/Neumaticos';
 
 export interface Customer {
   CODIGO: number;
@@ -26,6 +27,7 @@ export interface Customer {
   USUARIO_SUPER: string;
   TIPO_MOVIMIENTO: string;
   ESTADO: string;
+  PLACA?: string; // Añadido para poder agrupar por placa
 }
 
 interface CustomersTableProps {
@@ -53,6 +55,37 @@ export function CustomersTable({
 
   const selectedSome = (selected?.size ?? 0) > 0 && (selected?.size ?? 0) < rows.length;
   const selectedAll = rows.length > 0 && selected?.size === rows.length;
+
+  const [estadoPorCodigo, setEstadoPorCodigo] = React.useState<{ [codigo: number]: string | number }>({});
+
+  React.useEffect(() => {
+    async function fetchEstados() {
+      const codigos = rows.map(r => r.CODIGO);
+      const estados: { [codigo: number]: string | number } = {};
+      await Promise.all(codigos.map(async (codigo) => {
+        try {
+          const movimientos = await obtenerUltimosMovimientosPorCodigo(codigo);
+          // Log para depuración: ver movimientos retornados
+          if (window && window.console) {
+            console.log('Movimientos para código', codigo, movimientos);
+          }
+          if (Array.isArray(movimientos) && movimientos.length > 0) {
+            movimientos.sort((a, b) => new Date(b.FECHA_MOVIMIENTO).getTime() - new Date(a.FECHA_MOVIMIENTO).getTime());
+            const mov = movimientos[0];
+            if (mov && mov.ESTADO !== undefined) {
+              estados[codigo] = mov.ESTADO;
+            }
+          }
+        } catch (e) {
+          if (window && window.console) {
+            console.error('Error obteniendo movimientos para código', codigo, e);
+          }
+        }
+      }));
+      setEstadoPorCodigo(estados);
+    }
+    if (rows.length > 0) fetchEstados();
+  }, [rows]);
 
   return (
     <Card sx={{ width: '100%' }}>
@@ -92,6 +125,7 @@ export function CustomersTable({
           <TableBody>
             {rows.map((row) => {
               const isSelected = selected?.has(row.CODIGO.toString());
+              const estado = estadoPorCodigo[row.CODIGO] !== undefined ? estadoPorCodigo[row.CODIGO] : row.ESTADO;
 
               return (
                 <TableRow hover key={row.CODIGO} selected={isSelected}>
@@ -120,37 +154,51 @@ export function CustomersTable({
                   <TableCell>{row.PROVEEDOR}</TableCell>
                   <TableCell>{row.FECHA_FABRICACION_COD}</TableCell>
                   <TableCell>{row.TIPO_MOVIMIENTO}</TableCell>
-                  <TableCell>
-                    <Box sx={{ position: 'relative', minWidth: 60, width: '100%' }}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={parseInt(row.ESTADO, 10)}
-                        sx={{
-                          height: 20,
-                          borderRadius: 5,
-                          [`& .MuiLinearProgress-bar`]: {
-                            backgroundColor: parseInt(row.ESTADO, 10) === 100 ? 'green' : 'orange',
-                          },
-                        }}
-                      />
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {`${row.ESTADO}%`}
+                  <TableCell align="center">
+                    {typeof estado === 'number' ? (
+                      <Box sx={{ width: 80, position: 'relative' }}>
+                        <LinearProgress
+                          variant="determinate"
+                          value={estado}
+                          sx={{
+                            height: 16,
+                            borderRadius: 5,
+                            backgroundColor: '#eee',
+                            boxShadow: '0 0 0 1.5px #222', // Borde oscuro
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor:
+                                estado < 39 ? '#d32f2f' : estado < 79 ? '#ffa726' : '#2e7d32',
+                              borderRadius: 5,
+                            },
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          sx={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#fff',
+                            fontWeight: 'bold',
+                            fontSize: 13,
+                            letterSpacing: 0.5,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.25)'
+                          }}
+                        >
+                          {estado}%
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        -
                       </Typography>
-                    </Box>
+                    )}
                   </TableCell>
                 </TableRow>
               );
