@@ -1,5 +1,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
 
 interface Neumatico {
     POSICION: string;
@@ -29,7 +30,7 @@ const posiciones = {
     ],
 };
 
-const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void; soloMantenimiento?: boolean; onMantenimientoClick?: () => void; onRotarClick?: () => void }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, soloMantenimiento, onRotarClick, ...props }) => {
+const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void; onMantenimientoClick?: () => void; onRotarClick?: () => void; onDesasignarClick?: () => void }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, ...props }) => {
     const pos = posiciones[layout];
     return (
         <Box
@@ -65,90 +66,115 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
                 }
             />
             {/* Acciones rápidas solo en modal de mantenimiento */}
-            {layout === 'modal' && soloMantenimiento && (
+            {layout === 'modal' && (
                 <>
-                    <img src="/assets/rotar.png" alt="Rotar" title="Rotar" style={{ position: 'absolute', top: '100px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onRotarClick} />
-                    <img src="/assets/reparar.png" alt="Reparar" title="Reparar" style={{ position: 'absolute', top: '160px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
-                    <img src="/assets/recaucar.png" alt="Recauchar" title="Recauchar" style={{ position: 'absolute', top: '220px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
-                    <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
-                    <img src="/assets/dar de baja.png" alt="Dar de baja" title="Dar de baja" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} />
+                    <img src="/assets/rotar.png" alt="Rotar" title="Rotar" style={{ position: 'absolute', top: '220px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onRotarClick} />
+                    <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onDesasignarClick} />
+                    {/* <img src="/assets/dar de baja.png" alt="Dar de baja" title="Dar de baja" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} /> */}
                 </>
             )}
-            {/* Acciones rápidas solo en modal de inspección */}
-            {layout === 'modal' && !soloMantenimiento && (
-                <>
-                    <Box component="span" sx={{ position: 'absolute', top: '270px', left: '40px', zIndex: 2 }}>
-                        <img
-                            src="/assets/neu_matenimiento.png"
-                            alt="Mantenimiento neumático"
-                            style={{ width: '60px', height: '60px', objectFit: 'contain', cursor: 'pointer' }}
-                            onClick={props.onMantenimientoClick}
-                        />
-                        <Box sx={{ position: 'absolute', top: '-28px', left: '0', width: 'max-content', bgcolor: 'rgba(0,0,0,0.8)', color: 'white', px: 1, py: 0.5, borderRadius: 1, fontSize: 12, pointerEvents: 'none', opacity: 0, transition: 'opacity 0.2s', zIndex: 10 }} className="tooltip-mantenimiento">
-                            Abrir mantenimiento
-                        </Box>
-                    </Box>
-                    <Box component="span" sx={{ position: 'absolute', top: '340px', left: '40px', zIndex: 2 }}>
-                        <img src="/assets/trash-icon.png" alt="Eliminar neumático" style={{ width: '60px', height: '60px', objectFit: 'contain', cursor: 'pointer' }} />
-                        <Box sx={{ position: 'absolute', top: '-28px', left: '0', width: 'max-content', bgcolor: 'rgba(0,0,0,0.8)', color: 'white', px: 1, py: 0.5, borderRadius: 1, fontSize: 12, pointerEvents: 'none', opacity: 0, transition: 'opacity 0.2s', zIndex: 10 }} className="tooltip-eliminar">
-                            Eliminar neumático
-                        </Box>
-                    </Box>
-                </>
-            )}
+            {pos.map(({ key, top, left }) => (
+                <PosicionNeumatico
+                    key={key}
+                    keyPos={key}
+                    top={top}
+                    left={left}
+                    neumatico={neumaticosAsignados.find(n => n.POSICION === key)}
+                    layout={layout}
+                    onPosicionClick={onPosicionClick}
+                />
+            ))}
+        </Box>
+    );
+};
 
-            {pos.map(({ key, top, left }) => {
-                const neumatico = neumaticosAsignados.find(n => n.POSICION === key);
-                // Determinar color según el estado
-                let estado = undefined;
-                if (neumatico && neumatico.ESTADO !== undefined && neumatico.ESTADO !== null && neumatico.ESTADO !== '') {
-                    estado = typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO;
-                }
-                let bgColor = 'transparent';
-                if (estado !== undefined && !isNaN(estado)) {
-                    if (estado < 39) bgColor = '#d32f2f';
-                    else if (estado < 79) bgColor = '#ffa726';
-                    else bgColor = '#2e7d32';
-                } else if (neumatico) {
-                    bgColor = 'lightgreen'; // fallback si no hay estado pero sí neumático
-                }
-                return (
-                    <Box
-                        key={key}
-                        sx={{
-                            position: 'absolute',
-                            top,
-                            left,
-                            zIndex: 2,
-                            width: '26px',
-                            height: '58px',
-                            borderRadius: '15px',
-                            backgroundColor: bgColor,
-                            border: '2px solid #888',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            color: '#222',
-                            fontSize: 18,
-                            cursor: 'pointer',
-                            transition: 'box-shadow 0.2s',
-                            boxShadow: neumatico ? '0 0 8px 2px #4caf50' : 'none',
-                        }}
-                        onClick={() => onPosicionClick && onPosicionClick(neumatico)}
-                        title={key + (neumatico ? ` - ${neumatico.CODIGO_NEU || neumatico.CODIGO || ''}` : '')}
-                    >
-                        {neumatico ? (
-                            <span style={{ fontWeight: 'bold', fontSize: '10px', color: '#333' }}>
-                                {neumatico.CODIGO_NEU || neumatico.CODIGO}
-                            </span>
-                        ) : (
-                            key.replace('POS', '')
-                        )}
-                    </Box>
-                );
-            })}
+// Nuevo componente hijo para cada posición
+const PosicionNeumatico: React.FC<{
+    keyPos: string;
+    top: string;
+    left: string;
+    neumatico: Neumatico | undefined;
+    layout: 'dashboard' | 'modal';
+    onPosicionClick?: (neumatico: Neumatico | undefined) => void;
+}> = ({ keyPos, top, left, neumatico, layout, onPosicionClick }) => {
+    // Drop target para cada posición
+    const { setNodeRef: setDropRef, isOver } = useDroppable({ id: keyPos });
+    // Siempre ejecuta el hook, pero solo activa el draggable si hay neumático
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: neumatico ? (neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION) : keyPos,
+        disabled: !neumatico,
+        data: neumatico ? { ...neumatico, from: keyPos } : undefined,
+    });
+    // Determinar color según el estado
+    let estado = undefined;
+    if (neumatico && neumatico.ESTADO !== undefined && neumatico.ESTADO !== null && neumatico.ESTADO !== '') {
+        estado = typeof neumatico.ESTADO === 'string' ? parseInt(neumatico.ESTADO.replace('%', ''), 10) : neumatico.ESTADO;
+    }
+    let bgColor = 'transparent';
+    if (estado !== undefined && !isNaN(estado)) {
+        if (estado < 39) bgColor = '#d32f2f';
+        else if (estado < 79) bgColor = '#ffa726';
+        else bgColor = '#2e7d32';
+    } else if (neumatico) {
+        bgColor = 'lightgreen';
+    }
+    // Forzar log en el pointerDown del área de drag
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (neumatico) {
+            console.log('[DiagramaVehiculo] pointerDown en neumático', {
+                id: neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION,
+                e
+            });
+        }
+        if (listeners && listeners.onPointerDown) {
+            listeners.onPointerDown(e);
+        }
+    };
+    // Unir refs de draggable y droppable
+    const combinedRef = (node: HTMLDivElement | null) => {
+        setNodeRef(node);
+        setDropRef(node);
+    };
+    return (
+        <Box
+            ref={combinedRef}
+            key={keyPos}
+            aria-label={neumatico ? `Arrastrar neumático ${neumatico.CODIGO_NEU || neumatico.CODIGO}` : undefined}
+            {...attributes}
+            onPointerDown={neumatico ? handlePointerDown : undefined}
+            sx={{
+                position: 'absolute',
+                top,
+                left,
+                zIndex: 2,
+                width: layout === 'modal' ? '25px' : '26px',
+                height: layout === 'modal' ? '58px' : '58px',
+                borderRadius: '15px',
+                backgroundColor: isOver ? '#e0f7fa' : bgColor,
+                border: isOver ? '2px solid #388e3c' : '2px solid #888',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                color: '#222',
+                fontSize: 18,
+                cursor: neumatico ? 'grab' : 'pointer',
+                transition: 'box-shadow 0.2s, background 0.2s, border 0.2s',
+                boxShadow: neumatico && isDragging ? '0 0 16px 4px #388e3c' : neumatico ? '0 0 8px 2px #4caf50' : 'none',
+                opacity: neumatico && isDragging ? 0.5 : 1,
+                userSelect: 'none',
+                outline: neumatico && isDragging ? '2px solid #388e3c' : 'none',
+            }}
+            onClick={() => onPosicionClick && onPosicionClick(neumatico)}
+            title={keyPos + (neumatico ? ` - ${neumatico.CODIGO_NEU || neumatico.CODIGO || ''}` : '')}
+        >
+            {/* {neumatico && layout === 'modal' && (
+                <img src="/assets/neumatico.png" alt="neumático" style={{ width: 28, height: 48, marginBottom: 2, pointerEvents: 'none' }} />
+            )} */}
+            <span style={{ fontWeight: 'bold', fontSize: '13px', color: '#333', pointerEvents: 'none' }}>
+                {neumatico ? (neumatico.CODIGO_NEU || neumatico.CODIGO) : keyPos.replace('POS', '')}
+            </span>
         </Box>
     );
 };
