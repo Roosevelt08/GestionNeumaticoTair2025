@@ -72,6 +72,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     // Estado local para los neumáticos asignados (para poder actualizar al hacer drop)
     const [neumaticosAsignadosState, setNeumaticosAsignadosState] = useState<Neumatico[]>(neumaticosAsignados);
 
+    // Estado para la acción seleccionada (REUBICADO o DESASIGNAR)
+    const [accion, setAccion] = useState<'REUBICADO' | 'DESASIGNAR' | null>(null);
+
     // Actualizar el estado local si cambian los props
     React.useEffect(() => {
         setNeumaticosAsignadosState(neumaticosAsignados);
@@ -205,61 +208,131 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                     )}
                                 </Box>
                             </Card>
-                            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1, gap: 2 }}>
-                                    <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>Neumáticos por Rotar</Typography>
-                                    <Box sx={{ flex: 1 }} />
-                                    <TextField
-                                        label="Fecha y hora de inspección"
-                                        name="fecha_inspeccion"
-                                        size="small"
-                                        type="datetime-local"
-                                        value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
-                                        onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
-                                        InputLabelProps={{ shrink: true }}
-                                        inputProps={{ max: new Date().toISOString().slice(0, 16) }}
-                                        sx={{ minWidth: 220, mb: 0 }}
-                                    />
-                                </Box>
-                                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
-                                    <DropNeumaticosPorRotar onDropNeumatico={neu => handleDropNeumatico(neu, '')}>
-                                        <Box sx={{
-                                            mt: 0,
-                                            display: 'flex',
-                                            justifyContent: 'flex-start',
-                                            alignItems: 'flex-end',
-                                            minHeight: 100,
-                                            width: '300px',
-                                            maxWidth: '100%',
-                                            mx: 0,
-                                            p: 1,
-                                            overflowX: 'auto',
-                                        }}>
-                                            <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                {(neumaticosAsignadosState || []).filter(n => !n.POSICION).map((neu, idx) => (
-                                                    <Box key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
-                                                        <DraggableNeumatico neumatico={neu} />
-                                                        <NeumaticoInfo neumatico={neu} />
-                                                    </Box>
-                                                ))}
-                                            </Stack>
+                            {/* Mostrar solo el card correspondiente según la acción */}
+                            {accion === 'REUBICADO' && (
+                                <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1, gap: 2 }}>
+                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>REUBICADO</Typography>
+                                        <Box sx={{ flex: 1 }} />
+                                        <TextField
+                                            label="Fecha y hora de inspección"
+                                            name="fecha_inspeccion"
+                                            size="small"
+                                            type="datetime-local"
+                                            value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
+                                            onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                                            InputLabelProps={{ shrink: true }}
+                                            inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                                            sx={{ minWidth: 220, mb: 0 }}
+                                        />
+                                    </Box>
+                                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
+                                        <TextField
+                                            label="Observación"
+                                            name="observacion"
+                                            size="small"
+                                            multiline
+                                            minRows={2}
+                                            value={formValues.observacion}
+                                            onChange={handleInputChange}
+                                            sx={{ minWidth: 220, flex: 1 }}
+                                        />
+                                        <DropNeumaticosPorRotar onDropNeumatico={neu => handleDropNeumatico(neu, '')}>
+                                            <Box sx={{
+                                                mt: 0,
+                                                display: 'flex',
+                                                justifyContent: 'flex-start',
+                                                alignItems: 'flex-end',
+                                                minHeight: 100,
+                                                width: '300px',
+                                                maxWidth: '100%',
+                                                mx: 0,
+                                                p: 1,
+                                                overflowX: 'auto',
+                                            }}>
+                                                <Stack direction="row" spacing={1} alignItems="flex-end">
+                                                    {(neumaticosAsignadosState || []).filter(n => !n.POSICION).map((neu, idx) => (
+                                                        <Box key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
+                                                            <DraggableNeumatico neumatico={neu} />
+                                                            <NeumaticoInfo neumatico={neu} />
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Box>
+                                        </DropNeumaticosPorRotar>
+                                    </Box>
+                                </Card>
+                            )}
+                            {accion === 'DESASIGNAR' && (
+                                <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1, gap: 2 }}>
+                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>DESASIGNAR</Typography>
+                                        <Box sx={{ flex: 1 }} />
+                                        <TextField
+                                            label="Fecha y hora de inspección"
+                                            name="fecha_inspeccion"
+                                            size="small"
+                                            type="datetime-local"
+                                            value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
+                                            onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                                            InputLabelProps={{ shrink: true }}
+                                            inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                                            sx={{ minWidth: 220, mb: 0 }}
+                                        />
+                                    </Box>
+                                    <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
+
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 220, flex: 1 }}>
+                                            <TextField
+                                                select
+                                                label="Código"
+                                                name="codigo"
+                                                size="small"
+                                                value={formValues.codigo}
+                                                onChange={handleInputChange}
+                                                inputProps={{ style: { minWidth: '180px' } }}
+                                                sx={{ minWidth: 220 }}
+                                            >
+                                                <MenuItem value="RECUPERADO">RECUPERADO</MenuItem>
+                                                <MenuItem value="BAJA DEFINITIVA">BAJA DEFINITIVA</MenuItem>
+                                            </TextField>
+                                            <TextField
+                                                label="Observación"
+                                                name="observacion"
+                                                size="small"
+                                                multiline
+                                                minRows={2}
+                                                value={formValues.observacion}
+                                                onChange={handleInputChange}
+                                                sx={{ minWidth: 220, width: '100%' }}
+                                            />
                                         </Box>
-                                    </DropNeumaticosPorRotar>
-                                    <TextField
-                                        label="Observación"
-                                        name="observacion"
-                                        size="small"
-                                        multiline
-                                        minRows={2}
-                                        value={formValues.observacion}
-                                        onChange={handleInputChange}
-                                        sx={{ minWidth: 220, flex: 1 }}
-                                    />
-                                </Box>
-                            </Card>
-                            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-                                <TextField label="Código" name="codigo" size="small" value={formValues.codigo} inputProps={{ readOnly: true, style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
-                            </Card>
+                                        <DropNeumaticosPorRotar onDropNeumatico={neu => handleDropNeumatico(neu, '')}>
+                                            <Box sx={{
+                                                mt: 0,
+                                                display: 'flex',
+                                                justifyContent: 'flex-start',
+                                                alignItems: 'flex-end',
+                                                minHeight: 100,
+                                                width: '300px',
+                                                maxWidth: '100%',
+                                                mx: 0,
+                                                p: 1,
+                                                overflowX: 'auto',
+                                            }}>
+                                                <Stack direction="row" spacing={1} alignItems="flex-end">
+                                                    {(neumaticosAsignadosState || []).filter(n => !n.POSICION).map((neu, idx) => (
+                                                        <Box key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
+                                                            <DraggableNeumatico neumatico={neu} />
+                                                            <NeumaticoInfo neumatico={neu} />
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Box>
+                                        </DropNeumaticosPorRotar>
+                                    </Box>
+                                </Card>
+                            )}
                         </Stack>
                         {/* Columna derecha: Imagen o visualización */}
                         <Card sx={{
@@ -276,6 +349,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                     neumaticosAsignados={neumaticosAsignadosState}
                                     layout="modal"
                                     onPosicionClick={handleSeleccionarNeumatico}
+                                    onRotarClick={() => setAccion('REUBICADO')}
+                                    onDesasignarClick={() => setAccion('DESASIGNAR')}
                                 />
                                 <img
                                     src="/assets/placa.png"
