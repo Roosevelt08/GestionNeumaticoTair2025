@@ -212,7 +212,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                             {accion === 'REUBICADO' && (
                                 <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1, gap: 2 }}>
-                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>REUBICADO</Typography>
+                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>REUBICAR</Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
                                             label="Fecha y hora de inspección"
@@ -351,6 +351,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                     onPosicionClick={handleSeleccionarNeumatico}
                                     onRotarClick={() => setAccion('REUBICADO')}
                                     onDesasignarClick={() => setAccion('DESASIGNAR')}
+                                    fromMantenimientoModal={true}
                                 />
                                 <img
                                     src="/assets/placa.png"

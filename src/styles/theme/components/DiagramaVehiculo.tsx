@@ -30,7 +30,13 @@ const posiciones = {
     ],
 };
 
-const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (neumatico: Neumatico | undefined) => void; onMantenimientoClick?: () => void; onRotarClick?: () => void; onDesasignarClick?: () => void }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, ...props }) => {
+const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
+    onPosicionClick?: (neumatico: Neumatico | undefined) => void;
+    onMantenimientoClick?: () => void;
+    onRotarClick?: () => void;
+    onDesasignarClick?: () => void;
+    fromMantenimientoModal?: boolean;
+}> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, ...props }) => {
     const pos = posiciones[layout];
     return (
         <Box
@@ -66,11 +72,10 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & { onPosicionClick?: (ne
                 }
             />
             {/* Acciones rápidas solo en modal de mantenimiento */}
-            {layout === 'modal' && (
+            {layout === 'modal' && fromMantenimientoModal && (
                 <>
-                    <img src="/assets/rotar.png" alt="Rotar" title="Rotar" style={{ position: 'absolute', top: '220px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onRotarClick} />
+                    <img src="/assets/rotar.png" alt="Reubicar" title="Reubicar" style={{ position: 'absolute', top: '220px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onRotarClick} />
                     <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onDesasignarClick} />
-                    {/* <img src="/assets/dar de baja.png" alt="Dar de baja" title="Dar de baja" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain' }} /> */}
                 </>
             )}
             {pos.map(({ key, top, left }) => (
