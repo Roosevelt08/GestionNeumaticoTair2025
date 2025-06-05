@@ -1,19 +1,20 @@
 import * as React from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 import { useState } from 'react';
-import { obtenerUltimosMovimientosPorCodigo } from '../../../api/Neumaticos';
 import { DndContext, useDraggable, useDroppable } from '@dnd-kit/core';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+
+import { obtenerUltimosMovimientosPorCodigo } from '../../../api/Neumaticos';
+import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 
 // Ampliar la interfaz para evitar errores de propiedades
 interface Neumatico {
@@ -50,7 +51,14 @@ interface ModalInpeccionNeuProps {
     onSeleccionarNeumatico?: (neumatico: any) => void; // NUEVO
 }
 
-const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico }) => {
+const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
+    open,
+    onClose,
+    placa,
+    neumaticosAsignados,
+    vehiculo,
+    onSeleccionarNeumatico,
+}) => {
     const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
     const [formValues, setFormValues] = useState({
         kilometro: '',
@@ -123,8 +131,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
     // Lógica para actualizar la posición del neumático al hacer drop
     const handleDropNeumatico = (neumatico: Neumatico, nuevaPosicion: string) => {
-        setNeumaticosAsignadosState(prev =>
-            prev.map(n =>
+        setNeumaticosAsignadosState((prev) =>
+            prev.map((n) =>
                 (n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION)
                     ? { ...n, POSICION: nuevaPosicion }
                     : n.POSICION === nuevaPosicion
@@ -140,13 +148,13 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         if (over && active) {
             if (over.id === 'neumaticos-por-rotar') {
                 // Drop en el card: desasignar
-                const neu = neumaticosAsignadosState.find(n => (n.CODIGO_NEU || n.CODIGO || n.POSICION) === active.id);
+                const neu = neumaticosAsignadosState.find((n) => (n.CODIGO_NEU || n.CODIGO || n.POSICION) === active.id);
                 if (neu && neu.POSICION) {
                     handleDropNeumatico(neu, '');
                 }
             } else if (typeof over.id === 'string' && over.id.startsWith('POS')) {
                 // Drop en una posición del diagrama
-                const neu = neumaticosAsignadosState.find(n => (n.CODIGO_NEU || n.CODIGO || n.POSICION) === active.id);
+                const neu = neumaticosAsignadosState.find((n) => (n.CODIGO_NEU || n.CODIGO || n.POSICION) === active.id);
                 if (neu && over.id) {
                     handleDropNeumatico(neu, over.id);
                 }
@@ -163,48 +171,80 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                         <Stack direction="column" spacing={2} sx={{ flex: 1, width: '1px' }}>
                             <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                 <Box>
-                                    <Typography variant="h6" fontWeight="bold" gutterBottom>Datos del vehículo en Mantenimiento</Typography>
+                                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                                        Mantenimiento de Neumáticos
+                                    </Typography>
                                     {vehiculo ? (
                                         <Stack direction="row" spacing={4} alignItems="flex-start" sx={{ mb: 1 }}>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Marca</Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.marca}</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Marca
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    {vehiculo.marca}
+                                                </Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Modelo</Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.modelo}</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Modelo
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    {vehiculo.modelo}
+                                                </Typography>
                                             </Box>
                                             {vehiculo?.proyecto && (
                                                 <Box>
-                                                    <Typography variant="caption" color="text.secondary">Proyecto</Typography>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.proyecto}</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Proyecto
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                        {vehiculo.proyecto}
+                                                    </Typography>
                                                 </Box>
                                             )}
                                             {vehiculo?.operacion && (
                                                 <Box>
-                                                    <Typography variant="caption" color="text.secondary">Operación</Typography>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.operacion}</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Operación
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                        {vehiculo.operacion}
+                                                    </Typography>
                                                 </Box>
                                             )}
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Año</Typography>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.anio}</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Año
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                    {vehiculo.anio}
+                                                </Typography>
                                             </Box>
                                             {vehiculo?.color && (
                                                 <Box>
-                                                    <Typography variant="caption" color="text.secondary">Color</Typography>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.color}</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Color
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                        {vehiculo.color}
+                                                    </Typography>
                                                 </Box>
                                             )}
                                             {vehiculo?.kilometro !== undefined && (
                                                 <Box>
-                                                    <Typography variant="caption" color="text.secondary">Kilometraje</Typography>
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{vehiculo.kilometro.toLocaleString()} km</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Kilometraje
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                        {vehiculo.kilometro.toLocaleString()} km
+                                                    </Typography>
                                                 </Box>
                                             )}
                                         </Stack>
                                     ) : (
-                                        <Typography variant="body2" color="text.secondary">No hay datos del vehículo.</Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            No hay datos del vehículo.
+                                        </Typography>
                                     )}
                                 </Box>
                             </Card>
@@ -212,7 +252,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                             {accion === 'REUBICADO' && (
                                 <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1, gap: 2 }}>
-                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>REUBICAR</Typography>
+                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>
+                                            REUBICAR
+                                        </Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
                                             label="Fecha y hora de inspección"
@@ -220,7 +262,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                             size="small"
                                             type="datetime-local"
                                             value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
-                                            onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                                            onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
                                             InputLabelProps={{ shrink: true }}
                                             inputProps={{ max: new Date().toISOString().slice(0, 16) }}
                                             sx={{ minWidth: 220, mb: 0 }}
@@ -237,36 +279,51 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                             onChange={handleInputChange}
                                             sx={{ minWidth: 220, flex: 1 }}
                                         />
-                                        <DropNeumaticosPorRotar onDropNeumatico={neu => handleDropNeumatico(neu, '')}>
-                                            <Box sx={{
-                                                mt: 0,
-                                                display: 'flex',
-                                                justifyContent: 'flex-start',
-                                                alignItems: 'flex-end',
-                                                minHeight: 100,
-                                                width: '300px',
-                                                maxWidth: '100%',
-                                                mx: 0,
-                                                p: 1,
-                                                overflowX: 'auto',
-                                            }}>
+                                        <DropNeumaticosPorRotar onDropNeumatico={(neu) => handleDropNeumatico(neu, '')}>
+                                            <Box
+                                                sx={{
+                                                    mt: 0,
+                                                    display: 'flex',
+                                                    justifyContent: 'flex-start',
+                                                    alignItems: 'flex-end',
+                                                    minHeight: 100,
+                                                    width: '300px',
+                                                    maxWidth: '100%',
+                                                    mx: 0,
+                                                    p: 1,
+                                                    overflowX: 'auto',
+                                                }}
+                                            >
                                                 <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                    {(neumaticosAsignadosState || []).filter(n => !n.POSICION).map((neu, idx) => (
-                                                        <Box key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
-                                                            <DraggableNeumatico neumatico={neu} />
-                                                            <NeumaticoInfo neumatico={neu} />
-                                                        </Box>
-                                                    ))}
+                                                    {(neumaticosAsignadosState || [])
+                                                        .filter((n) => !n.POSICION)
+                                                        .map((neu, idx) => (
+                                                            <Box
+                                                                key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx}
+                                                                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
+                                                            >
+                                                                <DraggableNeumatico neumatico={neu} />
+                                                                <NeumaticoInfo neumatico={neu} />
+                                                            </Box>
+                                                        ))}
                                                 </Stack>
                                             </Box>
                                         </DropNeumaticosPorRotar>
                                     </Box>
+                                    <Button onClick={onClose} color="primary" variant="contained">
+                                        Cerrar
+                                    </Button>
+                                    <Button color="success" variant="contained" sx={{ ml: 1 }}>
+                                        Guardar Reubicación
+                                    </Button>
                                 </Card>
                             )}
                             {accion === 'DESASIGNAR' && (
                                 <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 1, gap: 2 }}>
-                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>DESASIGNAR</Typography>
+                                        <Typography variant="h6" sx={{ mt: 1, mb: 0 }}>
+                                            DESASIGNAR
+                                        </Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
                                             label="Fecha y hora de inspección"
@@ -274,14 +331,13 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                             size="small"
                                             type="datetime-local"
                                             value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
-                                            onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                                            onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
                                             InputLabelProps={{ shrink: true }}
                                             inputProps={{ max: new Date().toISOString().slice(0, 16) }}
                                             sx={{ minWidth: 220, mb: 0 }}
                                         />
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
-
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 220, flex: 1 }}>
                                             <TextField
                                                 select
@@ -307,43 +363,58 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                                                 sx={{ minWidth: 220, width: '100%' }}
                                             />
                                         </Box>
-                                        <DropNeumaticosPorRotar onDropNeumatico={neu => handleDropNeumatico(neu, '')}>
-                                            <Box sx={{
-                                                mt: 0,
-                                                display: 'flex',
-                                                justifyContent: 'flex-start',
-                                                alignItems: 'flex-end',
-                                                minHeight: 100,
-                                                width: '300px',
-                                                maxWidth: '100%',
-                                                mx: 0,
-                                                p: 1,
-                                                overflowX: 'auto',
-                                            }}>
+                                        <DropNeumaticosPorRotar onDropNeumatico={(neu) => handleDropNeumatico(neu, '')}>
+                                            <Box
+                                                sx={{
+                                                    mt: 0,
+                                                    display: 'flex',
+                                                    justifyContent: 'flex-start',
+                                                    alignItems: 'flex-end',
+                                                    minHeight: 100,
+                                                    width: '300px',
+                                                    maxWidth: '100%',
+                                                    mx: 0,
+                                                    p: 1,
+                                                    overflowX: 'auto',
+                                                }}
+                                            >
                                                 <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                    {(neumaticosAsignadosState || []).filter(n => !n.POSICION).map((neu, idx) => (
-                                                        <Box key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}>
-                                                            <DraggableNeumatico neumatico={neu} />
-                                                            <NeumaticoInfo neumatico={neu} />
-                                                        </Box>
-                                                    ))}
+                                                    {(neumaticosAsignadosState || [])
+                                                        .filter((n) => !n.POSICION)
+                                                        .map((neu, idx) => (
+                                                            <Box
+                                                                key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx}
+                                                                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
+                                                            >
+                                                                <DraggableNeumatico neumatico={neu} />
+                                                                <NeumaticoInfo neumatico={neu} />
+                                                            </Box>
+                                                        ))}
                                                 </Stack>
                                             </Box>
                                         </DropNeumaticosPorRotar>
                                     </Box>
+                                    <Button onClick={onClose} color="primary" variant="contained">
+                                        Cerrar
+                                    </Button>
+                                    <Button color="success" variant="contained" sx={{ ml: 1 }}>
+                                        Guardar Desasignación
+                                    </Button>
                                 </Card>
                             )}
                         </Stack>
                         {/* Columna derecha: Imagen o visualización */}
-                        <Card sx={{
-                            flex: 0.5,
-                            p: 2,
-                            position: 'relative',
-                            boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
-                            maxWidth: 400,
-                            minWidth: 320,
-                            width: '100%'
-                        }}>
+                        <Card
+                            sx={{
+                                flex: 0.5,
+                                p: 2,
+                                position: 'relative',
+                                boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+                                maxWidth: 400,
+                                minWidth: 320,
+                                width: '100%',
+                            }}
+                        >
                             <Box sx={{ position: 'relative', width: '370px', height: '430px' }}>
                                 <DiagramaVehiculo
                                     neumaticosAsignados={neumaticosAsignadosState}
@@ -388,14 +459,6 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     </Stack>
                 </DndContext>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose} color="primary" variant="contained">
-                    Cerrar
-                </Button>
-                <Button color="success" variant="contained" sx={{ ml: 1 }}>
-                    Guardar inspección
-                </Button>
-            </DialogActions>
         </Dialog>
     );
 };
@@ -424,9 +487,14 @@ export const DraggableNeumatico: React.FC<DraggableNeumaticoProps> = ({ neumatic
         position: 'relative' as const,
     };
     return (
-        <div ref={setNodeRef} style={{ ...style, transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined }} {...listeners} {...attributes}>
+        <div
+            ref={setNodeRef}
+            style={{ ...style, transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined }}
+            {...listeners}
+            {...attributes}
+        >
             <img
-                src={"/assets/neumatico.png"}
+                src={'/assets/neumatico.png'}
                 alt="Neumático"
                 style={{ width: 28, height: 77, objectFit: 'contain', filter: isDragging ? 'brightness(0.8)' : undefined }}
             />
@@ -447,7 +515,10 @@ const NeumaticoInfo: React.FC<{ neumatico: Neumatico }> = ({ neumatico }) => (
 );
 
 // Drop target para el card de Neumáticos por Rotar
-export const DropNeumaticosPorRotar: React.FC<{ onDropNeumatico: (neumatico: Neumatico) => void; children: React.ReactNode }> = ({ onDropNeumatico, children }) => {
+export const DropNeumaticosPorRotar: React.FC<{
+    onDropNeumatico: (neumatico: Neumatico) => void;
+    children: React.ReactNode;
+}> = ({ onDropNeumatico, children }) => {
     const { setNodeRef, isOver, active } = useDroppable({ id: 'neumaticos-por-rotar' });
     React.useEffect(() => {
         if (isOver && active && active.data?.current) {
@@ -459,19 +530,21 @@ export const DropNeumaticosPorRotar: React.FC<{ onDropNeumatico: (neumatico: Neu
         // eslint-disable-next-line
     }, [isOver]);
     return (
-        <Box ref={setNodeRef} sx={{
-            minHeight: 120,
-            width: '300px',
-            maxWidth: '100%', // No se sale del card
-            background: isOver ? '#e0f7fa' : '#fafafa',
-            border: isOver ? '2px solid #388e3c' : '1px solid #bdbdbd',
-            borderRadius: 2,
-            p: 1,
-            transition: 'background 0.2s, border 0.2s',
-            overflowX: 'auto',
-        }}>
+        <Box
+            ref={setNodeRef}
+            sx={{
+                minHeight: 120,
+                width: '300px',
+                maxWidth: '100%', // No se sale del card
+                background: isOver ? '#e0f7fa' : '#fafafa',
+                border: isOver ? '2px solid #388e3c' : '1px solid #bdbdbd',
+                borderRadius: 2,
+                p: 1,
+                transition: 'background 0.2s, border 0.2s',
+                overflowX: 'auto',
+            }}
+        >
             {children}
-
         </Box>
     );
 };

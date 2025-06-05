@@ -403,7 +403,7 @@ export default function Page(): React.JSX.Element {
                     }}
                   />
                 </Box>
-                <Box
+                {/* <Box
                   sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                   onClick={() => setOpenDeleteModal(true)}
                 >
@@ -426,7 +426,7 @@ export default function Page(): React.JSX.Element {
                       e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
                     }}
                   />
-                </Box>
+                </Box> */}
               </>
             )}
           </Stack>
