@@ -286,6 +286,21 @@ export default function Page(): React.JSX.Element {
   //   refreshAsignados
   // });
 
+  // Filtrar para mostrar solo el último movimiento por posición
+  const unicosPorPosicion = React.useMemo(() => {
+    // Filtra los que no tengan POSICION_NEU definida
+    const filtrados = neumaticosAsignados.filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0);
+    return Object.values(
+      filtrados.reduce((acc: Record<string, typeof neumaticosAsignados[0]>, curr) => {
+        const pos = curr.POSICION_NEU as string;
+        if (!acc[pos] || ((curr.ID_MOVIMIENTO ?? 0) > (acc[pos].ID_MOVIMIENTO ?? 0))) {
+          acc[pos] = curr;
+        }
+        return acc;
+      }, {})
+    );
+  }, [neumaticosAsignados]);
+
   return (
     <Stack spacing={3}>
       {/* <Stack direction="row" spacing={3}>
@@ -500,8 +515,9 @@ export default function Page(): React.JSX.Element {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {neumaticosAsignados.length > 0 ? (
-                  neumaticosAsignados.map((neumatico, index) => (
+                {unicosPorPosicion.length > 0 ? (
+                  // Filtrar para mostrar solo el último movimiento por posición
+                  unicosPorPosicion.map((neumatico: any, index: number) => (
                     <TableRow key={neumatico.ID_MOVIMIENTO || `${neumatico.CODIGO}-${neumatico.POSICION_NEU}` }>
                       <TableCell align="center">{neumatico.POSICION_NEU}</TableCell>
                       <TableCell align="center">{neumatico.CODIGO}</TableCell>

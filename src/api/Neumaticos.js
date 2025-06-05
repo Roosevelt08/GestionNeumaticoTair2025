@@ -164,3 +164,21 @@ export const obtenerUltimosMovimientosPorCodigo = async (codigo) => {
     throw error;
   }
 };
+
+// Registrar reubicación de neumático (REUBICADO)
+export const registrarReubicacionNeumatico = async (data) => {
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/registrorotacionneumatico`,
+      data,
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data && error.response.data.error) {
+      throw new Error(error.response.data.error + (error.response.data.detalle ? `: ${error.response.data.detalle}` : ''));
+    }
+    throw error;
+  }
+};
+

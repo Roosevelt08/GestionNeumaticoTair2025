@@ -102,7 +102,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     const neuFull = neuAsignados.find(n => n.POSICION === neumatico.POSICION || n.POSICION_NEU === neumatico.POSICION);
     // Buscar datos completos en po_neumaticos por código
     const codigoBuscar = neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '';
-    console.log('poNeumaticos:', poNeumaticos);
+    //console.log('poNeumaticos:', poNeumaticos);
     console.log('codigoBuscar:', codigoBuscar);
     const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(codigoBuscar));
     console.log('poNeu encontrado:', poNeu);

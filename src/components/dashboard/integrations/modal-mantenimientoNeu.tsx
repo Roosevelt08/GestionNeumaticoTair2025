@@ -12,8 +12,9 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useUser } from '@/hooks/use-user';
 
-import { obtenerUltimosMovimientosPorCodigo } from '../../../api/Neumaticos';
+import { obtenerUltimosMovimientosPorCodigo, registrarReubicacionNeumatico } from '../../../api/Neumaticos';
 import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 
 // Ampliar la interfaz para evitar errores de propiedades
@@ -29,6 +30,17 @@ interface Neumatico {
     PRESION_AIRE?: string | number;
     TORQUE_APLICADO?: string | number;
     ESTADO?: string | number;
+    // Campos extendidos para swap y payload
+    PR?: string;
+    CARGA?: string;
+    VELOCIDAD?: string;
+    FECHA_FABRICACION?: string;
+    RQ?: string;
+    OC?: string;
+    COSTO?: string;
+    PROVEEDOR?: string;
+    FECHA_COMPRA?: string;
+    KILOMETRO?: string | number;
 }
 
 interface Vehiculo {
@@ -59,6 +71,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
     vehiculo,
     onSeleccionarNeumatico,
 }) => {
+    const { user } = useUser();
     const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
     const [formValues, setFormValues] = useState({
         kilometro: '',
@@ -83,22 +96,62 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
     // Estado para la acción seleccionada (REUBICADO o DESASIGNAR)
     const [accion, setAccion] = useState<'REUBICADO' | 'DESASIGNAR' | null>(null);
 
-    // Actualizar el estado local si cambian los props
+    // Estado para guardar la posición original antes del drop
+    const [posicionOriginal, setPosicionOriginal] = useState<string | null>(null);
+    // Guardar el código del neumático que está siendo reubicado para controlar la posición original
+    const [codigoOriginal, setCodigoOriginal] = useState<string | null>(null);
+
+    // Estado para guardar info del swap
+    const [swapInfo, setSwapInfo] = useState<null | { codigo: string; posicionOriginal: string; posicionNueva: string }>(null);
+
+    // Estado para guardar el mapeo inicial de posición a neumático
+    const [initialAssignedMap, setInitialAssignedMap] = useState<Record<string, any>>({});
+
+    // Actualizar el estado local y el mapa inicial si cambian los props
     React.useEffect(() => {
         setNeumaticosAsignadosState(neumaticosAsignados);
+        // Mapear posición => neumático (solo los que tienen posición)
+        const map: Record<string, any> = {};
+        neumaticosAsignados.forEach(n => {
+            if (n.POSICION) map[n.POSICION] = n;
+        });
+        setInitialAssignedMap(map);
     }, [neumaticosAsignados]);
 
     // Cuando se selecciona un neumático, llenar el formulario
     const handleSeleccionarNeumatico = async (neumatico: any) => {
         setNeumaticoSeleccionado(neumatico);
+        // Si selecciono un neumático diferente, limpiar la posición original
+        if ((neumatico.CODIGO_NEU || neumatico.CODIGO) !== codigoOriginal) {
+            setPosicionOriginal(null);
+            setCodigoOriginal(null);
+        }
         let ultimoKilometro = vehiculo?.kilometro?.toString() ?? '';
+        let pr = '', carga = '', velocidad = '', fecha_fabricacion = '', rq = '', oc = '', remanente = '';
+        let costo = '', proveedor = '', fecha_compra = '', presion_aire = '', torque_aplicado = '', estado = '';
         // Buscar el último movimiento por código
         try {
             const codigoBuscar = neumatico.CODIGO_NEU || neumatico.CODIGO;
             if (codigoBuscar) {
                 const mov = await obtenerUltimosMovimientosPorCodigo(codigoBuscar);
-                if (mov && mov.length > 0 && mov[0].KILOMETRO !== undefined && mov[0].KILOMETRO !== null) {
-                    ultimoKilometro = mov[0].KILOMETRO.toString();
+                if (mov && mov.length > 0) {
+                    const m = mov[0];
+                    if (m.KILOMETRO !== undefined && m.KILOMETRO !== null) {
+                        ultimoKilometro = m.KILOMETRO.toString();
+                    }
+                    pr = m.PR || '';
+                    carga = m.CARGA || '';
+                    velocidad = m.VELOCIDAD || '';
+                    fecha_fabricacion = m.FECHA_FABRICACION || '';
+                    rq = m.RQ || '';
+                    oc = m.OC || '';
+                    remanente = m.REMANENTE?.toString() || '';
+                    costo = m.COSTO || '';
+                    proveedor = m.PROVEEDOR || '';
+                    fecha_compra = m.FECHA_COMPRA || '';
+                    presion_aire = m.PRESION_AIRE?.toString() || '';
+                    torque_aplicado = m.TORQUE_APLICADO?.toString() || '';
+                    estado = m.ESTADO || '';
                 }
             }
         } catch (e) {
@@ -112,14 +165,32 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             posicion: neumatico.POSICION ?? '',
             medida: neumatico.MEDIDA ?? '',
             diseño: neumatico.DISEÑO ?? '',
-            remanente: neumatico.REMANENTE?.toString() ?? '',
-            presion_aire: neumatico.PRESION_AIRE?.toString() ?? '',
-            torque: neumatico.TORQUE_APLICADO?.toString() ?? '',
+            remanente: remanente,
+            presion_aire: presion_aire,
+            torque: torque_aplicado,
             tipo_movimiento: '',
-            estado: neumatico.ESTADO ?? '',
+            estado: estado,
             fecha_inspeccion: new Date().toISOString().slice(0, 16), // Fecha y hora actual
             observacion: '',
         });
+        // Guardar los datos extra en el estado del neumático seleccionado
+        setNeumaticoSeleccionado((prev: any) => ({
+            ...prev,
+            PR: pr,
+            CARGA: carga,
+            VELOCIDAD: velocidad,
+            FECHA_FABRICACION: fecha_fabricacion,
+            RQ: rq,
+            OC: oc,
+            COSTO: costo,
+            PROVEEDOR: proveedor,
+            FECHA_COMPRA: fecha_compra,
+            PRESION_AIRE: presion_aire,
+            TORQUE_APLICADO: torque_aplicado,
+            ESTADO: estado,
+            KILOMETRO: ultimoKilometro,
+            REMANENTE: remanente,
+        }));
         if (onSeleccionarNeumatico) onSeleccionarNeumatico(neumatico);
     };
 
@@ -131,15 +202,81 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
 
     // Lógica para actualizar la posición del neumático al hacer drop
     const handleDropNeumatico = (neumatico: Neumatico, nuevaPosicion: string) => {
+        // Buscar si la posición destino está ocupada por otro neumático
+        const neumaticoDestino = neumaticosAsignadosState.find(n => n.POSICION === nuevaPosicion);
+        // Si hay neumático en destino y no es el mismo, hacer swap
+        if (nuevaPosicion && neumaticoDestino && (neumaticoDestino.CODIGO_NEU !== neumatico.CODIGO_NEU && neumaticoDestino.CODIGO !== neumatico.CODIGO)) {
+            setNeumaticosAsignadosState((prev) =>
+                prev.map((n) => {
+                    if ((n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION)) {
+                        // El neumático arrastrado va a la nueva posición
+                        return { ...n, POSICION: nuevaPosicion };
+                    } else if ((n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumaticoDestino.CODIGO_NEU || neumaticoDestino.CODIGO || neumaticoDestino.POSICION)) {
+                        // El neumático que estaba en destino va a la posición original del arrastrado
+                        return { ...n, POSICION: neumatico.POSICION };
+                    }
+                    return n;
+                })
+            );
+            // Seleccionar el neumático movido y actualizar el formulario
+            handleSeleccionarNeumatico({ ...neumatico, POSICION: nuevaPosicion });
+            // Guardar info para swap
+            setPosicionOriginal(neumatico.POSICION || null);
+            setCodigoOriginal(neumatico.CODIGO_NEU || neumatico.CODIGO || null);
+            // Guardar info del swap para el segundo neumático
+            setSwapInfo({
+                codigo: neumaticoDestino.CODIGO_NEU || neumaticoDestino.CODIGO || '',
+                posicionOriginal: neumaticoDestino.POSICION,
+                posicionNueva: neumatico.POSICION,
+            });
+            return;
+        }
+        // Si no hay swap, lógica normal
+        const yaOcupada = neumaticosAsignadosState.some(n => n.POSICION === nuevaPosicion && (n.CODIGO_NEU !== neumatico.CODIGO_NEU && n.CODIGO !== neumatico.CODIGO));
+        if (nuevaPosicion && yaOcupada) return;
+        if (typeof neumatico.POSICION === 'string' && neumatico.POSICION !== nuevaPosicion) {
+            setPosicionOriginal(neumatico.POSICION);
+            setCodigoOriginal(neumatico.CODIGO_NEU || neumatico.CODIGO || null);
+        } else if (!nuevaPosicion) {
+            setPosicionOriginal(null);
+            setCodigoOriginal(null);
+        }
         setNeumaticosAsignadosState((prev) =>
             prev.map((n) =>
                 (n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION)
                     ? { ...n, POSICION: nuevaPosicion }
                     : n.POSICION === nuevaPosicion
-                        ? { ...n, POSICION: '' } // Vacía la posición anterior si había otro
+                        ? { ...n, POSICION: '' }
                         : n
             )
         );
+        handleSeleccionarNeumatico({ ...neumatico, POSICION: nuevaPosicion });
+        setSwapInfo(null);
+    };
+
+    // Limpiar selección al hacer click en una posición vacía
+    const handlePosicionClick = (neumatico: Neumatico | undefined) => {
+        if (!neumatico) {
+            setNeumaticoSeleccionado(null);
+            setFormValues({
+                kilometro: '',
+                marca: '',
+                modelo: '',
+                codigo: '',
+                posicion: '',
+                medida: '',
+                diseño: '',
+                remanente: '',
+                presion_aire: '',
+                torque: '',
+                tipo_movimiento: '',
+                estado: '',
+                observacion: '',
+                fecha_inspeccion: '',
+            });
+        } else {
+            handleSeleccionarNeumatico(neumatico);
+        }
     };
 
     // Manejar el drop de neumático en una posición
@@ -158,6 +295,126 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                 if (neu && over.id) {
                     handleDropNeumatico(neu, over.id);
                 }
+            }
+        }
+    };
+
+    // Obtener datos extra del último movimiento para ambos neumáticos
+    const getFullData = async (neu: any) => {
+        let result = { ...neu };
+        try {
+            const codigoBuscar = neu.CODIGO_NEU || neu.CODIGO;
+            if (codigoBuscar) {
+                const mov = await obtenerUltimosMovimientosPorCodigo(codigoBuscar);
+                if (mov && mov.length > 0) {
+                    const m = mov[0];
+                    result = {
+                        ...result,
+                        PR: m.PR || '',
+                        CARGA: m.CARGA || '',
+                        VELOCIDAD: m.VELOCIDAD || '',
+                        FECHA_FABRICACION: m.FECHA_FABRICACION || '',
+                        RQ: m.RQ || '',
+                        OC: m.OC || '',
+                        COSTO: m.COSTO || '',
+                        PROVEEDOR: m.PROVEEDOR || '',
+                        FECHA_COMPRA: m.FECHA_COMPRA || '',
+                        PRESION_AIRE: m.PRESION_AIRE?.toString() || '',
+                        TORQUE_APLICADO: m.TORQUE_APLICADO?.toString() || '',
+                        ESTADO: m.ESTADO || '',
+                        KILOMETRO: m.KILOMETRO?.toString() || '',
+                        REMANENTE: m.REMANENTE?.toString() || '',
+                    };
+                }
+            }
+        } catch (e) { /* ignorar error, usar lo que haya */ }
+        return result;
+    };
+
+    // Handler para guardar reubicación
+    const handleGuardarReubicacion = async () => {
+        // 1. Detectar todos los swaps comparando estado inicial y final
+        const movimientos: any[] = [];
+        const posiciones = Object.keys(initialAssignedMap);
+        for (const pos of posiciones) {
+            const neuInicial = initialAssignedMap[pos];
+            const neuFinal = neumaticosAsignadosState.find(n => n.POSICION === pos);
+            // Si hay neumático en la posición final y cambió respecto al inicial
+            if (neuFinal && (!neuInicial || (neuFinal.CODIGO_NEU || neuFinal.CODIGO) !== (neuInicial.CODIGO_NEU || neuInicial.CODIGO))) {
+                // Buscar la posición anterior de este neumático
+                let posAnterior = '';
+                for (const p2 of posiciones) {
+                    const n2 = initialAssignedMap[p2];
+                    if (n2 && (n2.CODIGO_NEU || n2.CODIGO) === (neuFinal.CODIGO_NEU || neuFinal.CODIGO)) {
+                        posAnterior = p2;
+                        break;
+                    }
+                }
+                // Si no estaba en ninguna posición antes, es nuevo (no swap)
+                // Si sí estaba, es swap
+                const fullNeu = await getFullData({
+                    ...neuFinal,
+                    MARCA: neuFinal.MARCA,
+                    MEDIDA: neuFinal.MEDIDA,
+                    DISEÑO: neuFinal.DISEÑO,
+                    REMANENTE: neuFinal.REMANENTE,
+                    PLACA: placa,
+                });
+                let posicionNeuOriginal = posAnterior;
+                movimientos.push({
+                    CODIGO: fullNeu.CODIGO_NEU || fullNeu.CODIGO,
+                    MARCA: fullNeu.MARCA,
+                    MEDIDA: fullNeu.MEDIDA,
+                    DISEÑO: fullNeu.DISEÑO,
+                    REMANENTE: fullNeu.REMANENTE,
+                    PR: fullNeu.PR,
+                    CARGA: fullNeu.CARGA,
+                    VELOCIDAD: fullNeu.VELOCIDAD,
+                    FECHA_FABRICACION: fullNeu.FECHA_FABRICACION,
+                    RQ: fullNeu.RQ,
+                    OC: fullNeu.OC,
+                    PROYECTO: vehiculo?.proyecto || '',
+                    COSTO: fullNeu.COSTO,
+                    PROVEEDOR: fullNeu.PROVEEDOR,
+                    FECHA_REGISTRO: formValues.fecha_inspeccion || new Date().toISOString(),
+                    FECHA_COMPRA: fullNeu.FECHA_COMPRA,
+                    USUARIO_SUPER: user?.usuario || user?.email || user?.nombre || '',
+                    PRESION_AIRE: fullNeu.PRESION_AIRE,
+                    TORQUE_APLICADO: fullNeu.TORQUE_APLICADO,
+                    ESTADO: fullNeu.ESTADO,
+                    PLACA: placa,
+                    POSICION_NEU: posicionNeuOriginal,
+                    POSICION_INICIAL: posicionNeuOriginal,
+                    POSICION_FIN: pos,
+                    DESTINO: vehiculo?.proyecto || '',
+                    FECHA_ASIGNACION: new Date().toISOString(),
+                    KILOMETRO: fullNeu.KILOMETRO,
+                    FECHA_MOVIMIENTO: new Date().toISOString(),
+                    OBSERVACION: formValues.observacion,
+                });
+            }
+        }
+        if (movimientos.length === 0) {
+            alert('No hay cambios de posición para registrar.');
+            return;
+        }
+        // Normalizar el array antes de enviar
+        const normalizedPayloadArray = movimientos.map(normalizePayload);
+        // LOG para depuración: ver el payload antes de enviarlo
+        console.log('Payload que se enviará al backend (reubicación):', normalizedPayloadArray);
+        // Puedes dejar este log o quitarlo luego de validar
+        try {
+            await registrarReubicacionNeumatico(normalizedPayloadArray);
+            alert('Reubicación registrada correctamente');
+            setPosicionOriginal(null);
+            setCodigoOriginal(null);
+            setSwapInfo(null);
+            onClose();
+        } catch (error) {
+            if (error instanceof Error) {
+                alert('Error al registrar la reubicación: ' + error.message);
+            } else {
+                alert('Error al registrar la reubicación: ' + String(error));
             }
         }
     };
@@ -257,8 +514,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                         </Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
-                                            label="Fecha y hora de inspección"
-                                            name="fecha_inspeccion"
+                                            label="Fecha y hora"
+                                            name="fecha_reubicacion"
                                             size="small"
                                             type="datetime-local"
                                             value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
@@ -270,7 +527,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
                                         <TextField
-                                            label="Observación"
+                                            label="motivo"
                                             name="observacion"
                                             size="small"
                                             multiline
@@ -299,7 +556,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                         .filter((n) => !n.POSICION)
                                                         .map((neu, idx) => (
                                                             <Box
-                                                                key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx}
+                                                                key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
                                                                 sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
                                                             >
                                                                 <DraggableNeumatico neumatico={neu} />
@@ -313,7 +570,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                     <Button onClick={onClose} color="primary" variant="contained">
                                         Cerrar
                                     </Button>
-                                    <Button color="success" variant="contained" sx={{ ml: 1 }}>
+                                    <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleGuardarReubicacion}>
                                         Guardar Reubicación
                                     </Button>
                                 </Card>
@@ -326,8 +583,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                         </Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
-                                            label="Fecha y hora de inspección"
-                                            name="fecha_inspeccion"
+                                            label="Fecha y hora"
+                                            name="fecha_desasignacion"
                                             size="small"
                                             type="datetime-local"
                                             value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
@@ -341,8 +598,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 220, flex: 1 }}>
                                             <TextField
                                                 select
-                                                label="Código"
-                                                name="codigo"
+                                                label="Acción"
+                                                name="accion"
                                                 size="small"
                                                 value={formValues.codigo}
                                                 onChange={handleInputChange}
@@ -383,7 +640,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                         .filter((n) => !n.POSICION)
                                                         .map((neu, idx) => (
                                                             <Box
-                                                                key={neu.CODIGO_NEU || neu.CODIGO || neu.POSICION || idx}
+                                                                key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
                                                                 sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
                                                             >
                                                                 <DraggableNeumatico neumatico={neu} />
@@ -419,7 +676,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                 <DiagramaVehiculo
                                     neumaticosAsignados={neumaticosAsignadosState}
                                     layout="modal"
-                                    onPosicionClick={handleSeleccionarNeumatico}
+                                    onPosicionClick={handlePosicionClick}
                                     onRotarClick={() => setAccion('REUBICADO')}
                                     onDesasignarClick={() => setAccion('DESASIGNAR')}
                                     fromMantenimientoModal={true}
@@ -509,7 +766,7 @@ const NeumaticoInfo: React.FC<{ neumatico: Neumatico }> = ({ neumatico }) => (
             {neumatico.CODIGO_NEU || neumatico.CODIGO || 'Sin código'}
         </Typography>
         <Typography variant="caption" sx={{ fontSize: 10, color: '#888', textAlign: 'center', width: '100%' }}>
-            {neumatico.MARCA}
+            {neumatico.MARCA || ''}
         </Typography>
     </>
 );
@@ -522,8 +779,8 @@ export const DropNeumaticosPorRotar: React.FC<{
     const { setNodeRef, isOver, active } = useDroppable({ id: 'neumaticos-por-rotar' });
     React.useEffect(() => {
         if (isOver && active && active.data?.current) {
-            const neu = active.data.current;
-            if (neu && neu.POSICION) {
+            const neu = active.data.current as Neumatico;
+            if (neu && typeof neu.POSICION === 'string' && neu.POSICION) {
                 onDropNeumatico({ ...neu, POSICION: '' });
             }
         }
@@ -550,3 +807,38 @@ export const DropNeumaticosPorRotar: React.FC<{
 };
 
 export default ModalInpeccionNeu;
+function normalizePayload(mov: any) {
+    // Normaliza los campos y asegura que todos estén presentes y en el formato correcto
+    return {
+        CODIGO: mov.CODIGO || '',
+        MARCA: mov.MARCA || '',
+        MEDIDA: mov.MEDIDA || '',
+        DISEÑO: mov.DISEÑO || '',
+        REMANENTE: mov.REMANENTE || '',
+        PR: mov.PR || '',
+        CARGA: mov.CARGA || '',
+        VELOCIDAD: mov.VELOCIDAD || '',
+        FECHA_FABRICACION: mov.FECHA_FABRICACION || '',
+        RQ: mov.RQ || '',
+        OC: mov.OC || '',
+        PROYECTO: mov.PROYECTO || '',
+        COSTO: mov.COSTO || '',
+        PROVEEDOR: mov.PROVEEDOR || '',
+        FECHA_REGISTRO: mov.FECHA_REGISTRO ? new Date(mov.FECHA_REGISTRO).toISOString() : new Date().toISOString(),
+        FECHA_COMPRA: mov.FECHA_COMPRA || '',
+        USUARIO_SUPER: mov.USUARIO_SUPER || '',
+        PRESION_AIRE: mov.PRESION_AIRE || '',
+        TORQUE_APLICADO: mov.TORQUE_APLICADO || '',
+        ESTADO: mov.ESTADO || '',
+        PLACA: mov.PLACA || '',
+        POSICION_NEU: mov.POSICION_NEU || '',
+        POSICION_INICIAL: mov.POSICION_INICIAL || '',
+        POSICION_FIN: mov.POSICION_FIN || '',
+        DESTINO: mov.DESTINO || '',
+        FECHA_ASIGNACION: mov.FECHA_ASIGNACION ? new Date(mov.FECHA_ASIGNACION).toISOString() : new Date().toISOString(),
+        KILOMETRO: mov.KILOMETRO || '',
+        FECHA_MOVIMIENTO: mov.FECHA_MOVIMIENTO ? new Date(mov.FECHA_MOVIMIENTO).toISOString() : new Date().toISOString(),
+        OBSERVACION: mov.OBSERVACION || mov.OBS || mov.observacion || '',
+    };
+}
+
