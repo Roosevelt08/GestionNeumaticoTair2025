@@ -202,28 +202,19 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
 
     // Lógica para actualizar la posición del neumático al hacer drop
     const handleDropNeumatico = (neumatico: Neumatico, nuevaPosicion: string) => {
+        const codigo = neumatico.CODIGO_NEU || neumatico.CODIGO;
         // Buscar si la posición destino está ocupada por otro neumático
         const neumaticoDestino = neumaticosAsignadosState.find(n => n.POSICION === nuevaPosicion);
-        // Si hay neumático en destino y no es el mismo, hacer swap
+        // Eliminar todos los duplicados de ese código (excepto el que se está moviendo y el swap)
+        let nuevosNeumaticos = neumaticosAsignadosState.filter(n => (n.CODIGO_NEU || n.CODIGO) !== codigo);
+        // Si hay swap, mantener el destino pero con la posición intercambiada
         if (nuevaPosicion && neumaticoDestino && (neumaticoDestino.CODIGO_NEU !== neumatico.CODIGO_NEU && neumaticoDestino.CODIGO !== neumatico.CODIGO)) {
-            setNeumaticosAsignadosState((prev) =>
-                prev.map((n) => {
-                    if ((n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION)) {
-                        // El neumático arrastrado va a la nueva posición
-                        return { ...n, POSICION: nuevaPosicion };
-                    } else if ((n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumaticoDestino.CODIGO_NEU || neumaticoDestino.CODIGO || neumaticoDestino.POSICION)) {
-                        // El neumático que estaba en destino va a la posición original del arrastrado
-                        return { ...n, POSICION: neumatico.POSICION };
-                    }
-                    return n;
-                })
-            );
-            // Seleccionar el neumático movido y actualizar el formulario
+            nuevosNeumaticos.push({ ...neumatico, POSICION: nuevaPosicion });
+            nuevosNeumaticos.push({ ...neumaticoDestino, POSICION: neumatico.POSICION });
+            setNeumaticosAsignadosState(nuevosNeumaticos);
             handleSeleccionarNeumatico({ ...neumatico, POSICION: nuevaPosicion });
-            // Guardar info para swap
             setPosicionOriginal(neumatico.POSICION || null);
-            setCodigoOriginal(neumatico.CODIGO_NEU || neumatico.CODIGO || null);
-            // Guardar info del swap para el segundo neumático
+            setCodigoOriginal(codigo || null);
             setSwapInfo({
                 codigo: neumaticoDestino.CODIGO_NEU || neumaticoDestino.CODIGO || '',
                 posicionOriginal: neumaticoDestino.POSICION,
@@ -236,20 +227,17 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         if (nuevaPosicion && yaOcupada) return;
         if (typeof neumatico.POSICION === 'string' && neumatico.POSICION !== nuevaPosicion) {
             setPosicionOriginal(neumatico.POSICION);
-            setCodigoOriginal(neumatico.CODIGO_NEU || neumatico.CODIGO || null);
+            setCodigoOriginal(codigo || null);
         } else if (!nuevaPosicion) {
             setPosicionOriginal(null);
             setCodigoOriginal(null);
         }
-        setNeumaticosAsignadosState((prev) =>
-            prev.map((n) =>
-                (n.CODIGO_NEU || n.CODIGO || n.POSICION) === (neumatico.CODIGO_NEU || neumatico.CODIGO || neumatico.POSICION)
-                    ? { ...n, POSICION: nuevaPosicion }
-                    : n.POSICION === nuevaPosicion
-                        ? { ...n, POSICION: '' }
-                        : n
-            )
-        );
+        if (nuevaPosicion) {
+            nuevosNeumaticos.push({ ...neumatico, POSICION: nuevaPosicion });
+        } else {
+            nuevosNeumaticos.push({ ...neumatico, POSICION: '' });
+        }
+        setNeumaticosAsignadosState(nuevosNeumaticos);
         handleSeleccionarNeumatico({ ...neumatico, POSICION: nuevaPosicion });
         setSwapInfo(null);
     };
