@@ -41,6 +41,7 @@ interface Neumatico {
     PROVEEDOR?: string;
     FECHA_COMPRA?: string;
     KILOMETRO?: string | number;
+    TIPO_MOVIMIENTO?: string;
 }
 
 interface Vehiculo {
@@ -631,7 +632,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                 }}
                                             >
                                                 <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                    {neumaticosSinPosicionFiltrados.map((neu, idx) => (
+                                                    {neumaticosSinPosicionFiltrados.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO').map((neu, idx) => (
                                                         <Box
                                                             key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
                                                             sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
@@ -713,7 +714,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                 }}
                                             >
                                                 <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                    {neumaticosSinPosicionFiltrados.map((neu, idx) => (
+                                                    {neumaticosSinPosicionFiltrados.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO').map((neu, idx) => (
                                                         <Box
                                                             key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
                                                             sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
@@ -749,7 +750,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                         >
                             <Box sx={{ position: 'relative', width: '370px', height: '430px' }}>
                                 <DiagramaVehiculo
-                                    neumaticosAsignados={neumaticosAsignadosState}
+                                    neumaticosAsignados={neumaticosAsignadosState.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO')}
                                     layout="modal"
                                     onPosicionClick={handlePosicionClick}
                                     onRotarClick={() => setAccion('REUBICADO')}
