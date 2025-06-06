@@ -8,7 +8,8 @@ interface Neumatico {
     CODIGO?: string;
     POSICION_NEU?: string;
     ESTADO?: string | number;
-    ID_MOVIMIENTO?: number; // <-- Añadido para permitir ordenamiento por recencia
+    ID_MOVIMIENTO?: number | string;
+    TIPO_MOVIMIENTO?: string;
 }
 
 interface DiagramaVehiculoProps {
@@ -43,6 +44,8 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
         // 1. Filtrar por posición: el movimiento más reciente por posición
         const porPosicion = new Map<string, Neumatico>();
         for (const n of neumaticosAsignados) {
+            // Excluir BAJA DEFINITIVA y RECUPERADO
+            if (n.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || n.TIPO_MOVIMIENTO === 'RECUPERADO') continue;
             const pos = n.POSICION;
             if (!pos) continue;
             if (!porPosicion.has(pos) || ((n.ID_MOVIMIENTO || 0) > (porPosicion.get(pos)?.ID_MOVIMIENTO || 0))) {

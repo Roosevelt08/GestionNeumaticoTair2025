@@ -546,7 +546,7 @@ export default function Page(): React.JSX.Element {
             <DiagramaVehiculo
               layout="dashboard"
               neumaticosAsignados={neumaticosAsignadosUnicos
-                .filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0)
+                .filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0 && n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO')
                 .map(n => ({
                   POSICION: n.POSICION_NEU!,
                   CODIGO: n.CODIGO,

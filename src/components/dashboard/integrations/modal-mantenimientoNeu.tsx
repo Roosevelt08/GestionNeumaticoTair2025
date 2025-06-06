@@ -20,28 +20,16 @@ import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo'
 // Ampliar la interfaz para evitar errores de propiedades
 interface Neumatico {
     POSICION: string;
-    CODIGO?: string;
     CODIGO_NEU?: string;
+    CODIGO?: string;
+    POSICION_NEU?: string;
+    ESTADO?: string | number;
+    ID_MOVIMIENTO?: number | string;
+    TIPO_MOVIMIENTO?: string;
     MARCA?: string;
-    MODELO?: string;
     MEDIDA?: string;
     DISEÑO?: string;
     REMANENTE?: string | number;
-    PRESION_AIRE?: string | number;
-    TORQUE_APLICADO?: string | number;
-    ESTADO?: string | number;
-    // Campos extendidos para swap y payload
-    PR?: string;
-    CARGA?: string;
-    VELOCIDAD?: string;
-    FECHA_FABRICACION?: string;
-    RQ?: string;
-    OC?: string;
-    COSTO?: string;
-    PROVEEDOR?: string;
-    FECHA_COMPRA?: string;
-    KILOMETRO?: string | number;
-    TIPO_MOVIMIENTO?: string;
 }
 
 interface Vehiculo {
@@ -485,18 +473,23 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         }
     };
 
-    // Filtro robusto para la dropzone: solo el último movimiento por código
+    // Filtro robusto para la dropzone: solo el último movimiento por código y sin BAJA DEFINITIVA/RECUPERADO
     const neumaticosSinPosicionFiltrados = React.useMemo(() => {
-        const sinPosicion = (neumaticosAsignadosState || []).filter(n => !n.POSICION);
-        const porCodigo = new Map<string, Neumatico>();
-        for (const n of sinPosicion) {
-            const codigo = n.CODIGO_NEU || n.CODIGO;
-            if (!codigo) continue;
-            if (!porCodigo.has(codigo) || ((n as any).ID_MOVIMIENTO || 0) > ((porCodigo.get(codigo) as any)?.ID_MOVIMIENTO || 0)) {
-                porCodigo.set(codigo, n);
-            }
-        }
-        return Array.from(porCodigo.values());
+        // 1. Solo los que no tienen posición
+        const sinPos = neumaticosAsignadosState.filter(n => !n.POSICION || n.POSICION === '');
+        // 2. Solo el último movimiento por código
+        const porCodigo = Object.values(
+            sinPos.reduce((acc: Record<string, Neumatico>, curr) => {
+                const cod = curr.CODIGO_NEU || curr.CODIGO;
+                if (!cod) return acc;
+                if (!acc[cod] || ((curr.ID_MOVIMIENTO ?? 0) > (acc[cod].ID_MOVIMIENTO ?? 0))) {
+                    acc[cod] = curr;
+                }
+                return acc;
+            }, {})
+        );
+        // 3. Excluir BAJA DEFINITIVA y RECUPERADO
+        return porCodigo.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO');
     }, [neumaticosAsignadosState]);
 
     return (
