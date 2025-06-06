@@ -193,7 +193,7 @@ const PosicionNeumatico: React.FC<{
                 userSelect: 'none',
                 outline: neumatico && isDragging ? '2px solid #388e3c' : 'none',
             }}
-            onClick={() => onPosicionClick && onPosicionClick(neumatico)}
+            onClick={() => onPosicionClick && onPosicionClick(neumatico ? { ...neumatico, POSICION: keyPos } : undefined)}
             title={keyPos + (neumatico ? ` - ${neumatico.CODIGO_NEU || neumatico.CODIGO || ''}` : '')}
         >
             {/* {neumatico && layout === 'modal' && (

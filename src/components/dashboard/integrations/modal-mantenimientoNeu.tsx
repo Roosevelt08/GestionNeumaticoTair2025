@@ -14,7 +14,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useUser } from '@/hooks/use-user';
 
-import { obtenerUltimosMovimientosPorCodigo, registrarReubicacionNeumatico } from '../../../api/Neumaticos';
+import { obtenerUltimosMovimientosPorCodigo, registrarReubicacionNeumatico, registrarDesasignacionNeumatico } from '../../../api/Neumaticos';
 import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 
 // Ampliar la interfaz para evitar errores de propiedades
@@ -88,6 +88,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         estado: '',
         observacion: '',
         fecha_inspeccion: '',
+        accion: '', // <-- Añadido para el select de acción
     });
 
     // Estado local para los neumáticos asignados (para poder actualizar al hacer drop)
@@ -106,6 +107,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
 
     // Estado para guardar el mapeo inicial de posición a neumático
     const [initialAssignedMap, setInitialAssignedMap] = useState<Record<string, any>>({});
+
+    // Estado para guardar la última posición antes de desasignar
+    const [ultimaPosicionDesasignada, setUltimaPosicionDesasignada] = useState<string | null>(null);
 
     // Actualizar el estado local y el mapa inicial si cambian los props
     React.useEffect(() => {
@@ -172,6 +176,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             estado: estado,
             fecha_inspeccion: new Date().toISOString().slice(0, 16), // Fecha y hora actual
             observacion: '',
+            accion: '', // <-- Limpiar acción al seleccionar
         });
         // Guardar los datos extra en el estado del neumático seleccionado
         setNeumaticoSeleccionado((prev: any) => ({
@@ -232,6 +237,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             setPosicionOriginal(null);
             setCodigoOriginal(null);
         }
+        // Guardar la última posición antes de desasignar
+        if (!nuevaPosicion && neumatico.POSICION) {
+            setUltimaPosicionDesasignada(neumatico.POSICION);
+        }
         if (nuevaPosicion) {
             nuevosNeumaticos.push({ ...neumatico, POSICION: nuevaPosicion });
         } else {
@@ -261,6 +270,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                 estado: '',
                 observacion: '',
                 fecha_inspeccion: '',
+                accion: '', // <-- Limpiar acción
             });
         } else {
             handleSeleccionarNeumatico(neumatico);
@@ -404,6 +414,73 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             } else {
                 alert('Error al registrar la reubicación: ' + String(error));
             }
+        }
+    };
+
+    // Handler para guardar desasignación
+    const handleGuardarDesasignacion = async () => {
+        if (!neumaticoSeleccionado) {
+            alert('Selecciona un neumático para desasignar.');
+            return;
+        }
+        if (!formValues.accion) {
+            alert('Selecciona una acción para la desasignación.');
+            return;
+        }
+        // Construir el payload
+        // Usar la última posición conocida si la actual está vacía y solo si es válida (POS01, POS02, etc.)
+        let posicionParaPayload = neumaticoSeleccionado.POSICION || ultimaPosicionDesasignada || posicionOriginal || '';
+        // Validar que la posición sea válida (ejemplo: POS01, POS02, POS03, POS04)
+        if (!/^POS\d{2}$/.test(posicionParaPayload)) {
+            // Si no es válida, intenta buscar la posición original en el mapeo inicial
+            const codigo = neumaticoSeleccionado.CODIGO_NEU || neumaticoSeleccionado.CODIGO;
+            const posValida = Object.keys(initialAssignedMap).find(
+                key => (initialAssignedMap[key]?.CODIGO_NEU || initialAssignedMap[key]?.CODIGO) === codigo
+            );
+            if (posValida) {
+                posicionParaPayload = posValida;
+            } else {
+                posicionParaPayload = '';
+            }
+        }
+        const payload = {
+            CODIGO: neumaticoSeleccionado.CODIGO_NEU || neumaticoSeleccionado.CODIGO,
+            MARCA: neumaticoSeleccionado.MARCA,
+            MEDIDA: neumaticoSeleccionado.MEDIDA,
+            DISEÑO: neumaticoSeleccionado.DISEÑO,
+            REMANENTE: neumaticoSeleccionado.REMANENTE,
+            PR: neumaticoSeleccionado.PR,
+            CARGA: neumaticoSeleccionado.CARGA,
+            VELOCIDAD: neumaticoSeleccionado.VELOCIDAD,
+            FECHA_FABRICACION: neumaticoSeleccionado.FECHA_FABRICACION,
+            RQ: neumaticoSeleccionado.RQ,
+            OC: neumaticoSeleccionado.OC,
+            PROYECTO: vehiculo?.proyecto || '',
+            COSTO: neumaticoSeleccionado.COSTO,
+            PROVEEDOR: neumaticoSeleccionado.PROVEEDOR,
+            FECHA_REGISTRO: formValues.fecha_inspeccion || new Date().toISOString().slice(0, 10),
+            FECHA_COMPRA: neumaticoSeleccionado.FECHA_COMPRA,
+            USUARIO_SUPER: user?.usuario || user?.email || user?.nombre || '',
+            TIPO_MOVIMIENTO: formValues.accion, // <-- Usar formValues.accion
+            PRESION_AIRE: neumaticoSeleccionado.PRESION_AIRE,
+            TORQUE_APLICADO: neumaticoSeleccionado.TORQUE_APLICADO,
+            ESTADO: neumaticoSeleccionado.ESTADO,
+            PLACA: placa,
+            POSICION_NEU: posicionParaPayload,
+            DESTINO: vehiculo?.proyecto || '',
+            FECHA_ASIGNACION: formValues.fecha_inspeccion || new Date().toISOString().slice(0, 10),
+            KILOMETRO: neumaticoSeleccionado.KILOMETRO,
+            FECHA_MOVIMIENTO: formValues.fecha_inspeccion ? new Date(formValues.fecha_inspeccion).toISOString().replace('T', ' ').substring(0, 19) : new Date().toISOString().replace('T', ' ').substring(0, 19),
+            OBSERVACION: formValues.observacion,
+        };
+        // LOG para depuración: ver el payload antes de enviarlo
+        console.log('Payload que se enviará al backend (desasignación):', payload);
+        try {
+            await registrarDesasignacionNeumatico(payload);
+            alert('Desasignación registrada correctamente');
+            onClose();
+        } catch (error) {
+            alert('Error al registrar la desasignación: ' + (error instanceof Error ? error.message : String(error)));
         }
     };
 
@@ -601,7 +678,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                 label="Acción"
                                                 name="accion"
                                                 size="small"
-                                                value={formValues.codigo}
+                                                value={formValues.accion}
                                                 onChange={handleInputChange}
                                                 inputProps={{ style: { minWidth: '180px' } }}
                                                 sx={{ minWidth: 220 }}
@@ -652,7 +729,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                     <Button onClick={onClose} color="primary" variant="contained">
                                         Cerrar
                                     </Button>
-                                    <Button color="success" variant="contained" sx={{ ml: 1 }}>
+                                    <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleGuardarDesasignacion}>
                                         Guardar Desasignación
                                     </Button>
                                 </Card>
