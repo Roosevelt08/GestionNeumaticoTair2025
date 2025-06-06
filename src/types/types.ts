@@ -17,4 +17,5 @@ export interface Neumatico {
   TORQUE_APLICADO?: number; // Torque aplicado al neumático (opcional)
   ODOMETRO?: number; // Kilometraje del neumático (opcional)
   ID_MOVIMIENTO?: string; // ID del movimiento asociado al neumático (opcional)
+  FECHA_MOVIMIENTO?: string; // Fecha del movimiento asociado al neumático (opcional)
 }

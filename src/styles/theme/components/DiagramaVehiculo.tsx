@@ -8,6 +8,7 @@ interface Neumatico {
     CODIGO?: string;
     POSICION_NEU?: string;
     ESTADO?: string | number;
+    ID_MOVIMIENTO?: number; // <-- Añadido para permitir ordenamiento por recencia
 }
 
 interface DiagramaVehiculoProps {
@@ -38,6 +39,28 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
     fromMantenimientoModal?: boolean;
 }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, ...props }) => {
     const pos = posiciones[layout];
+    // Filtrado robusto: primero por posición (mayor ID_MOVIMIENTO), luego por código (mayor ID_MOVIMIENTO)
+    const neumaticosPorPosicion = React.useMemo(() => {
+        // 1. Filtrar por posición: el movimiento más reciente por posición
+        const porPosicion = new Map<string, Neumatico>();
+        for (const n of neumaticosAsignados) {
+            const pos = n.POSICION;
+            if (!pos) continue;
+            if (!porPosicion.has(pos) || ((n.ID_MOVIMIENTO || 0) > (porPosicion.get(pos)?.ID_MOVIMIENTO || 0))) {
+                porPosicion.set(pos, n);
+            }
+        }
+        // 2. Filtrar por código: solo dejar el movimiento más reciente por código
+        const porCodigo = new Map<string, Neumatico>();
+        for (const n of porPosicion.values()) {
+            const codigo = n.CODIGO_NEU || n.CODIGO;
+            if (!codigo) continue;
+            if (!porCodigo.has(codigo) || ((n.ID_MOVIMIENTO || 0) > (porCodigo.get(codigo)?.ID_MOVIMIENTO || 0))) {
+                porCodigo.set(codigo, n);
+            }
+        }
+        return Array.from(porCodigo.values());
+    }, [neumaticosAsignados]);
     return (
         <Box
             sx={
@@ -84,7 +107,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
                     keyPos={key}
                     top={top}
                     left={left}
-                    neumatico={neumaticosAsignados.find(n => n.POSICION === key)}
+                    neumatico={neumaticosPorPosicion.find(n => n.POSICION === key)}
                     layout={layout}
                     onPosicionClick={onPosicionClick}
                 />

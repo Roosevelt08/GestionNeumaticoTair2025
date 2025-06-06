@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca, obtenerCantidadAutosDisponibles, obtenerUltimosMovimientosPorPlaca } from '@/api/Neumaticos';
+import { Neumaticos, obtenerNeumaticosAsignadosPorPlaca, buscarVehiculoPorPlaca, obtenerCantidadAutosDisponibles, obtenerUltimosMovimientosPorPlaca, obtenerUltimosMovimientosPorCodigo } from '@/api/Neumaticos';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -273,8 +273,22 @@ export default function Page(): React.JSX.Element {
   // 1. Agrega la función para refrescar asignados
   const refreshAsignados = async () => {
     if (vehiculo?.PLACA) {
-      const asignados = await obtenerUltimosMovimientosPorPlaca(vehiculo.PLACA);
-      setNeumaticosAsignados(asignados);
+      const asignados = await obtenerNeumaticosAsignadosPorPlaca(vehiculo.PLACA);
+      const codigos: string[] = asignados.map((n: any) => n.CODIGO).filter(Boolean);
+      const codigosUnicos = Array.from(new Set(codigos));
+      const promesas = codigosUnicos.map(async (codigo) => {
+        try {
+          const movimientos = await obtenerUltimosMovimientosPorCodigo(codigo);
+          if (Array.isArray(movimientos) && movimientos.length > 0) {
+            return movimientos.sort((a, b) => new Date(b.FECHA_MOVIMIENTO).getTime() - new Date(a.FECHA_MOVIMIENTO).getTime())[0];
+          }
+          return null;
+        } catch (e) {
+          return null;
+        }
+      });
+      const ultimosPorCodigo = (await Promise.all(promesas)).filter(Boolean);
+      setNeumaticosAsignados(ultimosPorCodigo);
     }
   };
 
@@ -288,9 +302,10 @@ export default function Page(): React.JSX.Element {
 
   // Filtrar para mostrar solo el último movimiento por posición
   const unicosPorPosicion = React.useMemo(() => {
-    // Filtra los que no tengan POSICION_NEU definida
+    // 1. Filtra los que tengan posición definida
     const filtrados = neumaticosAsignados.filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0);
-    return Object.values(
+    // 2. Quedarse solo con el último movimiento por posición
+    const porPosicion = Object.values(
       filtrados.reduce((acc: Record<string, typeof neumaticosAsignados[0]>, curr) => {
         const pos = curr.POSICION_NEU as string;
         if (!acc[pos] || ((curr.ID_MOVIMIENTO ?? 0) > (acc[pos].ID_MOVIMIENTO ?? 0))) {
@@ -299,6 +314,56 @@ export default function Page(): React.JSX.Element {
         return acc;
       }, {})
     );
+    // 3. De los anteriores, quedarse solo con el último movimiento por código de neumático
+    const porCodigo = Object.values(
+      porPosicion.reduce((acc: Record<string, typeof porPosicion[0]>, curr) => {
+        const cod = curr.CODIGO as string;
+        if (!acc[cod] || ((curr.ID_MOVIMIENTO ?? 0) > (acc[cod].ID_MOVIMIENTO ?? 0))) {
+          acc[cod] = curr;
+        }
+        return acc;
+      }, {})
+    );
+    return porCodigo;
+  }, [neumaticosAsignados]);
+
+  // Doble filtrado: primero por posición (último movimiento por posición), luego por código (último movimiento por neumático)
+  // Esto asegura que nunca se muestre el mismo neumático en dos posiciones, incluso si el backend trae duplicados.
+  const unicosPorPosicionYCodigo = React.useMemo(() => {
+    // 1. Filtrar los que tengan posición definida
+    const filtrados = neumaticosAsignados.filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0);
+    // 2. Quedarse con el último movimiento por posición
+    const porPosicion = new Map<string, typeof neumaticosAsignados[0]>();
+    for (const n of filtrados) {
+      const pos = n.POSICION_NEU as string;
+      if (!porPosicion.has(pos) || ((n.ID_MOVIMIENTO ?? 0) > (porPosicion.get(pos)?.ID_MOVIMIENTO ?? 0))) {
+        porPosicion.set(pos, n);
+      }
+    }
+    // 3. De los seleccionados por posición, quedarse solo con el último movimiento por código de neumático
+    const porCodigo = new Map<string, typeof neumaticosAsignados[0]>();
+    for (const n of porPosicion.values()) {
+      const cod = n.CODIGO as string;
+      if (!porCodigo.has(cod) || ((n.ID_MOVIMIENTO ?? 0) > (porCodigo.get(cod)?.ID_MOVIMIENTO ?? 0))) {
+        porCodigo.set(cod, n);
+      }
+    }
+    return Array.from(porCodigo.values());
+  }, [neumaticosAsignados]);
+
+  // Memo para filtrar por el último movimiento por código usando FECHA_MOVIMIENTO
+  const neumaticosAsignadosUnicos = React.useMemo(() => {
+    // Agrupar por código y quedarse con el de FECHA_MOVIMIENTO más reciente
+    const porCodigo = new Map<string, typeof neumaticosAsignados[0]>();
+    for (const n of neumaticosAsignados) {
+      const cod = n.CODIGO as string;
+      const fechaN = new Date(n.FECHA_MOVIMIENTO ?? '1970-01-01').getTime();
+      const fechaPrev = new Date(porCodigo.get(cod)?.FECHA_MOVIMIENTO ?? '1970-01-01').getTime();
+      if (!porCodigo.has(cod) || fechaN > fechaPrev) {
+        porCodigo.set(cod, n);
+      }
+    }
+    return Array.from(porCodigo.values());
   }, [neumaticosAsignados]);
 
   return (
@@ -480,13 +545,13 @@ export default function Page(): React.JSX.Element {
           <Box sx={{ mt: 4, textAlign: 'left', position: 'relative', width: '262px', height: '365px' }}>
             <DiagramaVehiculo
               layout="dashboard"
-              neumaticosAsignados={neumaticosAsignados
+              neumaticosAsignados={neumaticosAsignadosUnicos
                 .filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0)
                 .map(n => ({
                   POSICION: n.POSICION_NEU!,
                   CODIGO: n.CODIGO,
                   CODIGO_NEU: n.CODIGO_NEU,
-                  ESTADO: n.ESTADO, 
+                  ESTADO: n.ESTADO,
                 }))
               }
             />
@@ -515,9 +580,8 @@ export default function Page(): React.JSX.Element {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {unicosPorPosicion.length > 0 ? (
-                  // Filtrar para mostrar solo el último movimiento por posición
-                  unicosPorPosicion.map((neumatico: any, index: number) => (
+                {neumaticosAsignadosUnicos.length > 0 ? (
+                  neumaticosAsignadosUnicos.map((neumatico: any, index: number) => (
                     <TableRow key={neumatico.ID_MOVIMIENTO || `${neumatico.CODIGO}-${neumatico.POSICION_NEU}` }>
                       <TableCell align="center">{neumatico.POSICION_NEU}</TableCell>
                       <TableCell align="center">{neumatico.CODIGO}</TableCell>
@@ -558,7 +622,7 @@ export default function Page(): React.JSX.Element {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#000', // negro puro
+                                color: '#000',
                                 fontWeight: 'bold',
                                 fontSize: 13,
                                 letterSpacing: 0.5,
