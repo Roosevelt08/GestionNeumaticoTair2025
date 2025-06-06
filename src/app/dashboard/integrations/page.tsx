@@ -828,10 +828,14 @@ export default function Page(): React.JSX.Element {
         } : undefined}
         // Nueva prop para selección de neumático
         onSeleccionarNeumatico={() => { }}
+        onUpdateAsignados={refreshAsignados}
       />
       <ModalMantenimientoNeu
         open={openMantenimientoModal}
-        onClose={() => setOpenMantenimientoModal(false)}
+        onClose={() => {
+          setOpenMantenimientoModal(false);
+          refreshAsignados(); // Refresca asignados al cerrar
+        }}
         placa={vehiculo?.PLACA ?? ''}
         neumaticosAsignados={neumaticosAsignados
           .filter((n): n is Neumatico & { POSICION_NEU: string } => typeof n.POSICION_NEU === 'string')

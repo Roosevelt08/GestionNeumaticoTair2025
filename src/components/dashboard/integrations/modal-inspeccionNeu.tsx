@@ -43,9 +43,10 @@ interface ModalInpeccionNeuProps {
   neumaticosAsignados: Neumatico[];
   vehiculo?: Vehiculo;
   onSeleccionarNeumatico?: (neumatico: any) => void; // NUEVO
+  onUpdateAsignados?: () => void; // NUEVO: callback para refrescar asignados
 }
 
-const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico }) => {
+const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico, onUpdateAsignados }) => {
   const { user } = useContext(UserContext) || {};
   const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
   const [formValues, setFormValues] = useState({
@@ -282,6 +283,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     try {
       await guardarInspeccion(datosEnviar);
       setSnackbar({ open: true, message: 'Inspección guardada correctamente.', severity: 'success' });
+      if (onUpdateAsignados) onUpdateAsignados(); // Refresca asignados si el padre lo provee
       onClose();
     } catch (error: any) {
       const msg = error?.message || 'Error al guardar la inspección.';
