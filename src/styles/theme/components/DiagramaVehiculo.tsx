@@ -39,8 +39,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
     fromMantenimientoModal?: boolean;
 }> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, ...props }) => {
     const pos = posiciones[layout];
-    // Filtrado robusto: primero por posición (mayor ID_MOVIMIENTO), luego por código (mayor ID_MOVIMIENTO)
-    const neumaticosPorPosicion = React.useMemo(() => {
+    const neumaticosFiltrados = React.useMemo(() => {
         // 1. Filtrar por posición: el movimiento más reciente por posición
         const porPosicion = new Map<string, Neumatico>();
         for (const n of neumaticosAsignados) {
@@ -107,7 +106,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
                     keyPos={key}
                     top={top}
                     left={left}
-                    neumatico={neumaticosPorPosicion.find(n => n.POSICION === key)}
+                    neumatico={neumaticosFiltrados.find(n => n.POSICION === key)}
                     layout={layout}
                     onPosicionClick={onPosicionClick}
                 />

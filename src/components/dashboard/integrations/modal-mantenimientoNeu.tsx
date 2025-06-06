@@ -419,6 +419,20 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         }
     };
 
+    // Filtro robusto para la dropzone: solo el último movimiento por código
+    const neumaticosSinPosicionFiltrados = React.useMemo(() => {
+        const sinPosicion = (neumaticosAsignadosState || []).filter(n => !n.POSICION);
+        const porCodigo = new Map<string, Neumatico>();
+        for (const n of sinPosicion) {
+            const codigo = n.CODIGO_NEU || n.CODIGO;
+            if (!codigo) continue;
+            if (!porCodigo.has(codigo) || ((n as any).ID_MOVIMIENTO || 0) > ((porCodigo.get(codigo) as any)?.ID_MOVIMIENTO || 0)) {
+                porCodigo.set(codigo, n);
+            }
+        }
+        return Array.from(porCodigo.values());
+    }, [neumaticosAsignadosState]);
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
             {/* <DialogTitle sx={{ fontWeight: 'bold', color: '#388e3c' }}>Inspección de Neumáticos</DialogTitle> */}
@@ -552,17 +566,15 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                 }}
                                             >
                                                 <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                    {(neumaticosAsignadosState || [])
-                                                        .filter((n) => !n.POSICION)
-                                                        .map((neu, idx) => (
-                                                            <Box
-                                                                key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
-                                                                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
-                                                            >
-                                                                <DraggableNeumatico neumatico={neu} />
-                                                                <NeumaticoInfo neumatico={neu} />
-                                                            </Box>
-                                                        ))}
+                                                    {neumaticosSinPosicionFiltrados.map((neu, idx) => (
+                                                        <Box
+                                                            key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
+                                                            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
+                                                        >
+                                                            <DraggableNeumatico neumatico={neu} />
+                                                            <NeumaticoInfo neumatico={neu} />
+                                                        </Box>
+                                                    ))}
                                                 </Stack>
                                             </Box>
                                         </DropNeumaticosPorRotar>
@@ -636,17 +648,15 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                                 }}
                                             >
                                                 <Stack direction="row" spacing={1} alignItems="flex-end">
-                                                    {(neumaticosAsignadosState || [])
-                                                        .filter((n) => !n.POSICION)
-                                                        .map((neu, idx) => (
-                                                            <Box
-                                                                key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
-                                                                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
-                                                            >
-                                                                <DraggableNeumatico neumatico={neu} />
-                                                                <NeumaticoInfo neumatico={neu} />
-                                                            </Box>
-                                                        ))}
+                                                    {neumaticosSinPosicionFiltrados.map((neu, idx) => (
+                                                        <Box
+                                                            key={`${neu.CODIGO_NEU || neu.CODIGO || neu.POSICION}-${idx}`}
+                                                            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 40 }}
+                                                        >
+                                                            <DraggableNeumatico neumatico={neu} />
+                                                            <NeumaticoInfo neumatico={neu} />
+                                                        </Box>
+                                                    ))}
                                                 </Stack>
                                             </Box>
                                         </DropNeumaticosPorRotar>
