@@ -559,6 +559,7 @@ export default function Page(): React.JSX.Element {
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Marca</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Medida</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Remanente</TableCell>
+                  <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Fecha Movimiento</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Estado</TableCell>
                 </TableRow>
               </TableHead>
@@ -571,6 +572,18 @@ export default function Page(): React.JSX.Element {
                       <TableCell align="center">{neumatico.MARCA}</TableCell>
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
                       <TableCell align="center">{neumatico.REMANENTE ?? 0}</TableCell>
+                      <TableCell align="center">{
+                        neumatico.FECHA_MOVIMIENTO
+                          ? new Date(neumatico.FECHA_MOVIMIENTO).toLocaleString('es-PE', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: false
+                            })
+                          : ''
+                      }</TableCell>
                       <TableCell align="center">
                         {typeof neumatico.ESTADO === 'number' || (typeof neumatico.ESTADO === 'string' && neumatico.ESTADO !== '') ? (
                           <Box sx={{ position: 'relative', width: '120px' }}>
