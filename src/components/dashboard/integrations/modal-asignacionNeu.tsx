@@ -391,7 +391,13 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     // Solo asigna al backend las posiciones que antes estaban vacías
     const handleConfirm = async () => {
         const toAssign = Object.entries(assignedNeumaticos).filter(
-            ([pos, neu]) => neu !== null && initialAssignedMap[pos] == null
+            ([pos, neu]) => {
+                if (!neu) return false;
+                const prev = initialAssignedMap[pos];
+                // Considerar vacía si no hay anterior o si el anterior es BAJA DEFINITIVA o RECUPERADO
+                const prevEsBajaORecuperado = prev && (prev.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || prev.TIPO_MOVIMIENTO === 'RECUPERADO');
+                return prev == null || prevEsBajaORecuperado;
+            }
         );
         if (toAssign.length === 0) {
             alert("No hay cambios pendientes.");
