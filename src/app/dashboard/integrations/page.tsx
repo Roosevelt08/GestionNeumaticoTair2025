@@ -31,8 +31,10 @@ import ModalInpeccionNeu from '@/components/dashboard/integrations/modal-inspecc
 import ModalMantenimientoNeu from '@/components/dashboard/integrations/modal-mantenimientoNeu';
 import DiagramaVehiculo from '@/styles/theme/components/DiagramaVehiculo';
 import { Neumatico } from '@/types/types';
+import { useUser } from '@/hooks/use-user';
 
 export default function Page(): React.JSX.Element {
+  const { user } = useUser();
   const [filterCol1, setFilterCol1] = React.useState('');
   const [filterCol2, setFilterCol2] = React.useState('');
   const [vehiculo, setVehiculo] = React.useState<Vehiculo | null>(null);
@@ -124,8 +126,12 @@ export default function Page(): React.JSX.Element {
         }
 
         const listaNeumaticos = await Neumaticos();
+        // Filtrar por USUARIO_SUPER si existe user
         const filtrados: Neumatico[] = listaNeumaticos
-          .filter((neumatico: Neumatico) => neumatico.PROYECTO === vehiculoData.PROYECTO)
+          .filter((neumatico: any) =>
+            neumatico.PROYECTO === vehiculoData.PROYECTO &&
+            (!user?.usuario || neumatico.USUARIO_SUPER === user.usuario)
+          )
           .map((neumatico: Neumatico) => ({
             ...neumatico,
             CODIGO: neumatico.CODIGO_NEU || neumatico.CODIGO,
@@ -234,9 +240,11 @@ export default function Page(): React.JSX.Element {
     obtenerNeumaticosAsignadosPorPlaca(vehiculoSeleccionado.PLACA?.trim()).then(setNeumaticosAsignados);
     // Mostrar en la tabla de disponibles SOLO los neumáticos del usuario autenticado (no filtrar por proyecto externo)
     Neumaticos().then(listaNeumaticos => {
+      // Filtrar por USUARIO_SUPER si existe user
+      const filtrados = listaNeumaticos.filter((n: any) => !user?.usuario || n.USUARIO_SUPER === user.usuario);
       setNeumaticos(listaNeumaticos);
-      setNeumaticosFiltrados(listaNeumaticos); // Mostrar todos los disponibles del usuario
-      animateTotalNeumaticos(0, listaNeumaticos.length);
+      setNeumaticosFiltrados(filtrados); // Mostrar todos los disponibles del usuario
+      animateTotalNeumaticos(0, filtrados.length);
     });
   };
 

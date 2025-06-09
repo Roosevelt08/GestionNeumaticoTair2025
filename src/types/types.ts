@@ -19,4 +19,5 @@ export interface Neumatico {
   ODOMETRO?: number; // Kilometraje del neumático (opcional)
   ID_MOVIMIENTO?: number | string; // ID del movimiento asociado al neumático (opcional, puede ser string o number)
   FECHA_MOVIMIENTO?: string; // Fecha del movimiento asociado al neumático (opcional)
+  USUARIO_SUPER?: string; // Usuario que realizó la acción (opcional)
 }
