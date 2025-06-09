@@ -12,6 +12,9 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import { useUser } from '@/hooks/use-user';
 
 import { obtenerUltimosMovimientosPorCodigo, registrarReubicacionNeumatico, registrarDesasignacionNeumatico } from '../../../api/Neumaticos';
@@ -99,6 +102,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
 
     // Estado para guardar la última posición antes de desasignar
     const [ultimaPosicionDesasignada, setUltimaPosicionDesasignada] = useState<string | null>(null);
+
+    // Snackbar personalizado para feedback visual
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMsg, setSnackbarMsg] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success'|'error'|'info'|'warning'>('success');
 
     // Actualizar el estado local y el mapa inicial si cambian los props
     React.useEffect(() => {
@@ -389,7 +397,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             }
         }
         if (movimientos.length === 0) {
-            alert('No hay cambios de posición para registrar.');
+            setSnackbarMsg('No hay cambios de posición para registrar.');
+            setSnackbarSeverity('info');
+            setSnackbarOpen(true);
             return;
         }
         // Normalizar el array antes de enviar
@@ -399,28 +409,36 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         // Puedes dejar este log o quitarlo luego de validar
         try {
             await registrarReubicacionNeumatico(normalizedPayloadArray);
-            alert('Reubicación registrada correctamente');
+            setSnackbarMsg('Reubicación registrada correctamente');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
             setPosicionOriginal(null);
             setCodigoOriginal(null);
             setSwapInfo(null);
-            onClose();
+            // onClose(); // <--- Eliminar el cierre inmediato
         } catch (error) {
             if (error instanceof Error) {
-                alert('Error al registrar la reubicación: ' + error.message);
+                setSnackbarMsg('Error al registrar la reubicación: ' + error.message);
             } else {
-                alert('Error al registrar la reubicación: ' + String(error));
+                setSnackbarMsg('Error al registrar la reubicación: ' + String(error));
             }
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         }
     };
 
     // Handler para guardar desasignación
     const handleGuardarDesasignacion = async () => {
         if (!neumaticoSeleccionado) {
-            alert('Selecciona un neumático para desasignar.');
+            setSnackbarMsg('Selecciona un neumático para desasignar.');
+            setSnackbarSeverity('info');
+            setSnackbarOpen(true);
             return;
         }
         if (!formValues.accion) {
-            alert('Selecciona una acción para la desasignación.');
+            setSnackbarMsg('Selecciona una acción para la desasignación.');
+            setSnackbarSeverity('info');
+            setSnackbarOpen(true);
             return;
         }
         // Construir el payload
@@ -473,10 +491,14 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         console.log('Payload que se enviará al backend (desasignación):', payload);
         try {
             await registrarDesasignacionNeumatico(payload);
-            alert('Desasignación registrada correctamente');
+            setSnackbarMsg('Desasignación registrada correctamente');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
             onClose();
         } catch (error) {
-            alert('Error al registrar la desasignación: ' + (error instanceof Error ? error.message : String(error)));
+            setSnackbarMsg('Error al registrar la desasignación: ' + (error instanceof Error ? error.message : String(error)));
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         }
     };
 
@@ -501,7 +523,39 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-            {/* <DialogTitle sx={{ fontWeight: 'bold', color: '#388e3c' }}>Inspección de Neumáticos</DialogTitle> */}
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={3000}
+                onClose={(_event, reason) => {
+                    setSnackbarOpen(false);
+                    if (snackbarSeverity === 'success' && snackbarMsg === 'Reubicación registrada correctamente') {
+                        onClose();
+                    }
+                }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <MuiAlert
+                    onClose={() => setSnackbarOpen(false)}
+                    severity={snackbarSeverity}
+                    elevation={6}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarSeverity === 'success' && (
+                        <AlertTitle>Éxito</AlertTitle>
+                    )}
+                    {snackbarSeverity === 'error' && (
+                        <AlertTitle>Error</AlertTitle>
+                    )}
+                    {snackbarSeverity === 'info' && (
+                        <AlertTitle>Información</AlertTitle>
+                    )}
+                    {snackbarSeverity === 'warning' && (
+                        <AlertTitle>Advertencia</AlertTitle>
+                    )}
+                    {snackbarMsg}
+                </MuiAlert>
+            </Snackbar>
             <DialogContent>
                 <DndContext onDragEnd={handleDragEnd}>
                     <Stack direction="row" spacing={2}>

@@ -28,6 +28,9 @@ import ModalAvertAsigNeu from './modal-avertAsigNeu';
 import ModalInputsNeu from './modal-inputsNeu';
 import { Neumatico } from '@/types/types';
 import { asignarNeumatico } from '../../../api/Neumaticos'; // Ajusta la ruta según la ubicación real del archivo
+import MuiAlert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+import Snackbar from '@mui/material/Snackbar';
 
 const ItemType = {
     NEUMATICO: 'neumatico',
@@ -297,8 +300,10 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
 
     const [assignedNeumaticos, setAssignedNeumaticos] = useState(initialAssignedMap);
 
-
-
+    // Snackbar personalizado para feedback visual
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMsg, setSnackbarMsg] = useState('');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success'|'error'|'info'|'warning'>('success');
 
 
 
@@ -400,7 +405,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             }
         );
         if (toAssign.length === 0) {
-            alert("No hay cambios pendientes.");
+            setSnackbarMsg('No hay cambios pendientes.');
+            setSnackbarSeverity('info');
+            setSnackbarOpen(true);
             return;
         }
         try {
@@ -424,14 +431,18 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                     return asignarNeumatico(payload);
                 })
             );
-            alert("Asignación completada.");
+            setSnackbarMsg('Neumático asignado.');
+            setSnackbarSeverity('success');
+            setSnackbarOpen(true);
             if (typeof onAssignedUpdate === 'function') {
                 await onAssignedUpdate(); // Notifica al padre para refrescar asignados
             }
             onClose();
         } catch (e: any) {
             console.error(e);
-            alert(e.message);
+            setSnackbarMsg(e.message || 'Error al asignar neumático.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
         }
     };
     // ------------------------------------------------
@@ -439,6 +450,34 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
 
     return (
         <DndProvider backend={HTML5Backend}>
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={4000}
+                onClose={() => setSnackbarOpen(false)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <MuiAlert
+                    onClose={() => setSnackbarOpen(false)}
+                    severity={snackbarSeverity}
+                    elevation={6}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbarSeverity === 'success' && (
+                        <AlertTitle>Éxito</AlertTitle>
+                    )}
+                    {snackbarSeverity === 'error' && (
+                        <AlertTitle>Error</AlertTitle>
+                    )}
+                    {snackbarSeverity === 'info' && (
+                        <AlertTitle>Información</AlertTitle>
+                    )}
+                    {snackbarSeverity === 'warning' && (
+                        <AlertTitle>Advertencia</AlertTitle>
+                    )}
+                    {snackbarMsg}
+                </MuiAlert>
+            </Snackbar>
             <Dialog
                 open={open}
                 onClose={handleDialogClose}
