@@ -230,7 +230,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         if (!nuevaPosicion && neumatico.POSICION) {
             setUltimaPosicionDesasignada(neumatico.POSICION);
         }
-        if (nuevaPosicion) {
+        // Si el neumático está siendo desasignado y su TIPO_MOVIMIENTO es BAJA DEFINITIVA o RECUPERADO, no lo agregues a la lista local de asignados
+        if (!nuevaPosicion && (neumatico.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || neumatico.TIPO_MOVIMIENTO === 'RECUPERADO')) {
+            // No lo agregues a nuevosNeumaticos
+        } else if (nuevaPosicion) {
             nuevosNeumaticos.push({ ...neumatico, POSICION: nuevaPosicion });
         } else {
             nuevosNeumaticos.push({ ...neumatico, POSICION: '' });
@@ -325,8 +328,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         const posiciones = Object.keys(initialAssignedMap);
         for (const pos of posiciones) {
             const neuInicial = initialAssignedMap[pos];
-            const neuFinal = neumaticosAsignadosState.find(n => n.POSICION === pos);
-            // Si hay neumático en la posición final y cambió respecto al inicial
+            // Ignorar completamente los neumáticos de baja definitiva o recuperado
+            if (neuInicial && (neuInicial.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || neuInicial.TIPO_MOVIMIENTO === 'RECUPERADO')) {
+                continue;
+            }
+            const neuFinal = neumaticosAsignadosState.find(n => n.POSICION === pos && n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO');
+            // Si hay neumático en la posición final y cambió respecto al inicial (o antes no había)
             if (neuFinal && (!neuInicial || (neuFinal.CODIGO_NEU || neuFinal.CODIGO) !== (neuInicial.CODIGO_NEU || neuInicial.CODIGO))) {
                 // Buscar la posición anterior de este neumático
                 let posAnterior = '';
@@ -476,7 +483,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
     // Filtro robusto para la dropzone: solo el último movimiento por código y sin BAJA DEFINITIVA/RECUPERADO
     const neumaticosSinPosicionFiltrados = React.useMemo(() => {
         // 1. Solo los que no tienen posición
-        const sinPos = neumaticosAsignadosState.filter(n => !n.POSICION || n.POSICION === '');
+        const sinPos = neumaticosAsignadosState.filter(n => (!n.POSICION || n.POSICION === '') && n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO');
         // 2. Solo el último movimiento por código
         const porCodigo = Object.values(
             sinPos.reduce((acc: Record<string, Neumatico>, curr) => {
@@ -488,7 +495,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                 return acc;
             }, {})
         );
-        // 3. Excluir BAJA DEFINITIVA y RECUPERADO
+        // 3. Excluir BAJA DEFINITIVA y RECUPERADO (ya filtrado arriba, pero por seguridad)
         return porCodigo.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO');
     }, [neumaticosAsignadosState]);
 
