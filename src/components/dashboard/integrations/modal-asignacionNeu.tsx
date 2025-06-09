@@ -215,6 +215,10 @@ const DropZone: React.FC<DropZoneProps> = ({
         }, 0);
     };
 
+    // Determinar si el neumático de la posición está en baja definitiva o recuperado
+    const neumatico = assignedNeumaticos[position];
+    const esBajaORecuperado = neumatico && (neumatico.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || neumatico.TIPO_MOVIMIENTO === 'RECUPERADO');
+
     return (
         <div
             ref={ref}
@@ -225,21 +229,22 @@ const DropZone: React.FC<DropZoneProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: isAssigned ? 'lightgreen' : 'transparent',
+                backgroundColor: isAssigned && !esBajaORecuperado ? 'lightgreen' : 'transparent',
                 borderRadius: '20px',
                 border: 'none',
                 pointerEvents: 'all',
-                cursor: isAssigned ? 'pointer' : 'default',
+                cursor: isAssigned && !esBajaORecuperado ? 'pointer' : 'default',
                 boxShadow: isShaking ? '0 0 10px 4px red' : 'none',
                 transition: 'box-shadow 0.2s ease-in-out',
             }}
         >
-            {isAssigned && (
+            {/* Solo mostrar el neumático si no es baja ni recuperado */}
+            {isAssigned && !esBajaORecuperado ? (
                 <span>
                     {assignedNeumaticos[position]?.CODIGO || '🛞'}
                 </span>
-            )}
-            {/* Si no está asignado, no mostrar nada visual extra */}
+            ) : null}
+            {/* Si no está asignado o es baja/recuperado, no mostrar nada visual extra */}
             <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleCloseMenu}>
                 <MenuItem onClick={() => { setInputsModalOpen(true); handleCloseMenu(); }}>Editar neumático</MenuItem>
                 <MenuItem onClick={handleOpenModal}>Quitar neumático</MenuItem>
@@ -590,25 +595,31 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {Object.entries(assignedNeumaticos).map(([position, neumatico]) => (
-                                                <TableRow key={position}>
-                                                    <TableCell>{position}</TableCell>
-                                                    <TableCell>{neumatico?.CODIGO || '----'}</TableCell>
-                                                    <TableCell>{neumatico?.MARCA || '----'}</TableCell>
-                                                    <TableCell>{neumatico?.MEDIDA || '----'}</TableCell>
-                                                    <TableCell>{neumatico?.FECHA_ASIGNACION || neumatico?.FECHA_REGISTRO || '----'}</TableCell>
-                                                    <TableCell>
-                                                        {neumatico?.TIPO_MOVIMIENTO === 'ASIGNADO' ? (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                <span>ASIGNADO</span>
-                                                                <CheckBoxIcon style={{ color: 'green' }} />
-                                                            </div>
-                                                        ) : (
-                                                            neumatico?.TIPO_MOVIMIENTO || '----'
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
+                                            {Object.entries(assignedNeumaticos).map(([position, neumatico]) => {
+                                                const esBajaORecuperado = neumatico && (neumatico.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || neumatico.TIPO_MOVIMIENTO === 'RECUPERADO');
+                                                return (
+                                                    <TableRow key={position}>
+                                                        <TableCell>{position}</TableCell>
+                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.CODIGO || '----')}</TableCell>
+                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.MARCA || '----')}</TableCell>
+                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.MEDIDA || '----')}</TableCell>
+                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.FECHA_ASIGNACION || neumatico?.FECHA_REGISTRO || '----')}</TableCell>
+                                                        <TableCell>
+                                                            {esBajaORecuperado
+                                                                ? '----'
+                                                                : neumatico?.TIPO_MOVIMIENTO === 'ASIGNADO'
+                                                                    ? (
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                            <span>ASIGNADO</span>
+                                                                            <CheckBoxIcon style={{ color: 'green' }} />
+                                                                        </div>
+                                                                    )
+                                                                    : (neumatico?.TIPO_MOVIMIENTO || '----')
+                                                            }
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
