@@ -18,6 +18,7 @@ const ModalTodasPlacas: React.FC<ModalTodasPlacasProps> = ({ open, onClose, onVe
     const [vehiculo, setVehiculo] = React.useState<any | null>(null);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const [seleccionando, setSeleccionando] = React.useState(false);
 
     const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -120,34 +121,37 @@ const ModalTodasPlacas: React.FC<ModalTodasPlacasProps> = ({ open, onClose, onVe
                                         <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Año</TableCell>
                                     </TableRow>
                                 </TableHead>
-                                <tbody>
-                                    {loading && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} align="center">Buscando...</TableCell>
-                                        </TableRow>
-                                    )}
-                                    {error && !loading && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} align="center">{error}</TableCell>
-                                        </TableRow>
-                                    )}
-                                    {vehiculo && !loading && !error && (
-                                        <TableRow
-                                            hover
-                                            style={{ cursor: 'pointer' }}
-                                            onClick={() => {
-                                                if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
-                                                onClose();
-                                            }}
-                                        >
-                                            <TableCell>{vehiculo.MARCA}</TableCell>
-                                            <TableCell>{vehiculo.MODELO}</TableCell>
-                                            <TableCell>{vehiculo.TIPO}</TableCell>
-                                            <TableCell>{vehiculo.COLOR}</TableCell>
-                                            <TableCell>{vehiculo.ANO}</TableCell>
-                                        </TableRow>
-                                    )}
-                                </tbody>
+                                    <tbody>
+                                        {loading && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} align="center">Buscando...</TableCell>
+                                            </TableRow>
+                                        )}
+                                        {error && !loading && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} align="center">{error}</TableCell>
+                                            </TableRow>
+                                        )}
+                                        {vehiculo && !loading && !error && (
+                                            <TableRow
+                                                hover
+                                                style={{ cursor: seleccionando ? 'not-allowed' : 'pointer', opacity: seleccionando ? 0.5 : 1 }}
+                                                onClick={() => {
+                                                    if (seleccionando) return;
+                                                    setSeleccionando(true);
+                                                    if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
+                                                    onClose();
+                                                    setTimeout(() => setSeleccionando(false), 500); // Evita doble click rápido
+                                                }}
+                                            >
+                                                <TableCell>{vehiculo.MARCA}</TableCell>
+                                                <TableCell>{vehiculo.MODELO}</TableCell>
+                                                <TableCell>{vehiculo.TIPO}</TableCell>
+                                                <TableCell>{vehiculo.COLOR}</TableCell>
+                                                <TableCell>{vehiculo.ANO}</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </tbody>
                             </Table>
                         </Stack>
                     </Box>

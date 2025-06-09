@@ -56,7 +56,10 @@ export function CompaniesFilters({
   };
 
   const handleVehiculoSeleccionado = (vehiculo: any) => {
-    if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
+    // Solo dispara la consulta si la placa es diferente a la actual
+    if ((vehiculo?.PLACA || '').toUpperCase() !== inputValue.toUpperCase()) {
+      if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
+    }
     setOpenModal(false);
     setCheckboxChecked(false);
     setInputValue(vehiculo?.PLACA || '');
