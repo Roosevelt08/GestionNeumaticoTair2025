@@ -491,30 +491,7 @@ export default function Page(): React.JSX.Element {
                     }}
                   />
                 </Box>
-                {/* <Box
-                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                  onClick={() => setOpenDeleteModal(true)}
-                >
-                  <img
-                    src="/assets/trash-icon.png"
-                    alt="Ícono de papelera"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      boxShadow: '0 0 0 0 rgba(0,0,0,0)',
-                    }}
-                    title="ELIMINAR NEUMÁTICO ASIGNADO"
-                    onMouseOver={e => {
-                      e.currentTarget.style.transform = 'scale(1.15)';
-                      e.currentTarget.style.boxShadow = '0 4px 16px 0 #f44336';
-                    }}
-                    onMouseOut={e => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.boxShadow = '0 0 0 0 rgba(0,0,0,0)';
-                    }}
-                  />
-                </Box> */}
+                
               </>
             )}
           </Stack>
@@ -556,10 +533,8 @@ export default function Page(): React.JSX.Element {
               neumaticosAsignados={neumaticosAsignadosUnicos
                 .filter(n => typeof n.POSICION_NEU === 'string' && n.POSICION_NEU.length > 0 && n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO')
                 .map(n => ({
-                  POSICION: n.POSICION_NEU!,
-                  CODIGO: n.CODIGO,
-                  CODIGO_NEU: n.CODIGO_NEU,
-                  ESTADO: n.ESTADO,
+                  ...n,
+                  POSICION: n.POSICION_NEU ?? '' // Garantiza que POSICION siempre sea string
                 }))
               }
             />

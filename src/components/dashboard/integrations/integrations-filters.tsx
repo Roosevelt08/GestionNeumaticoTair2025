@@ -30,6 +30,7 @@ export function CompaniesFilters({
   const [openModal, setOpenModal] = React.useState(false);
   const [checkboxChecked, setCheckboxChecked] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
+  const [placaSeleccionada, setPlacaSeleccionada] = React.useState('');
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const checked = event.target.checked;
@@ -47,6 +48,7 @@ export function CompaniesFilters({
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
+    setPlacaSeleccionada(''); // Limpiar placa seleccionada si escribe
     onSearchChange(event);
     if (event.target.value.trim() !== '') {
       setCheckboxChecked(false);
@@ -57,7 +59,8 @@ export function CompaniesFilters({
     if (onVehiculoSeleccionado) onVehiculoSeleccionado(vehiculo);
     setOpenModal(false);
     setCheckboxChecked(false);
-    setInputValue('');
+    setInputValue(vehiculo?.PLACA || '');
+    setPlacaSeleccionada(vehiculo?.PLACA || '');
   };
 
   return (
@@ -102,7 +105,7 @@ export function CompaniesFilters({
             height: 70,
           }}
         />
-        <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
+        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
           {operationName}
         </Typography>
         <Box
@@ -114,12 +117,49 @@ export function CompaniesFilters({
             height: 100,
           }}
         />
-        <Typography variant="body2" sx={{ fontWeight: 'medium'}}>
+
+        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
           {autosDisponiblesCount} VEHICULOS DISPONIBLES
         </Typography>
+          <Box sx={{ position: 'relative', display: 'inline-block' }}>
+            <Box
+              component="img"
+              src="/assets/placa.png"
+              alt="Placa"
+              sx={{
+                width: 170,
+                height: 70,
+                ml: 1,
+                display: 'block',
+              }}
+            />
+            {(inputValue.trim() !== '' || placaSeleccionada) && (
+              <Typography
+                variant="h6"
+                sx={{
+                  position: 'absolute',
+                  top: '55%',
+                  left: '52%',
+                  transform: 'translate(-50%, -50%)',
+                  color: 'black',
+                  fontWeight: 'bold',
+                  fontSize: 33,
+                  textShadow: '0 2px 8px #fff, 0 1px 0 #fff',
+                  fontFamily: 'Arial, sans-serif',  
+                  pointerEvents: 'none',
+                  width: '100%',
+                  textAlign: 'center',
+                  letterSpacing: 2,
+                }}
+              >
+                {(inputValue.trim() || placaSeleccionada).toUpperCase()}
+              </Typography>
+            )}
+          </Box>
       </Stack>
       {/* Modal para todas las placas */}
       <ModalTodasPlacas open={openModal} onClose={handleCloseModal} onVehiculoSeleccionado={handleVehiculoSeleccionado} />
+
     </Card>
   );
 }
