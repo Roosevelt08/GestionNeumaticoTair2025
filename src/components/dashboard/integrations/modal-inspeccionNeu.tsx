@@ -19,6 +19,25 @@ import Alert from '@mui/material/Alert';
 import axios from 'axios';
 import { UserContext } from '../../../contexts/user-context';
 
+// --- Declaraciones de tipos fuera del componente ---
+interface FormValues {
+  kilometro: string;
+  marca: string;
+  modelo: string;
+  codigo: string;
+  posicion: string;
+  medida: string;
+  diseño: string;
+  remanente: string;
+  tipo_movimiento: string;
+  estado: string;
+  observacion: string;
+  presion_aire: string;
+  torque: string;
+  fecha_inspeccion: string;
+}
+type SnackbarSeverity = 'success' | 'error' | 'info';
+
 interface Neumatico {
   POSICION: string;
 }
@@ -49,7 +68,8 @@ interface ModalInpeccionNeuProps {
 const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, placa, neumaticosAsignados, vehiculo, onSeleccionarNeumatico, onUpdateAsignados }) => {
   const { user } = useContext(UserContext) || {};
   const [neumaticoSeleccionado, setNeumaticoSeleccionado] = useState<any | null>(null);
-  const [formValues, setFormValues] = useState({
+  const [snackbar, setSnackbar] = React.useState<{ open: boolean; message: string; severity: SnackbarSeverity }>({ open: false, message: '', severity: 'success' });
+  const [formValues, setFormValues] = React.useState<FormValues>({
     kilometro: '',
     marca: '',
     modelo: '',
@@ -70,9 +90,6 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const [kmError, setKmError] = React.useState(false);
   const [Odometro, setOdometro] = React.useState(0);
   const [remanenteError, setRemanenteError] = React.useState(false);
-  const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
-  const [poNeumaticos, setPoNeumaticos] = useState<any[]>([]);
-  const [poNeumaticoSeleccionado, setPoNeumaticoSeleccionado] = useState<any | null>(null);
   const [remanenteAsignacion, setRemanenteAsignacion] = useState<number | null>(null);
   const [remanenteUltimoMovimiento, setRemanenteUltimoMovimiento] = useState<number | null>(null);
   const [remanenteAsignacionReal, setRemanenteAsignacionReal] = useState<number | null>(null);
@@ -80,6 +97,16 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     const num = Number(formValues.kilometro);
     return isNaN(num) ? 0 : num;
   }, [formValues.kilometro]);
+
+  // Estado local para inspecciones pendientes
+  const [inspeccionesPendientes, setInspeccionesPendientes] = useState<any[]>([]);
+  // Estado para el formulario inicial (para comparar cambios)
+  const [formValuesInicial, setFormValuesInicial] = React.useState<FormValues | null>(null);
+
+  // Estado para todos los po_neumaticos (debe estar definido)
+  const [poNeumaticos, setPoNeumaticos] = useState<any[]>([]);
+  // Estado para el po_neumatico seleccionado (debe estar definido)
+  const [poNeumaticoSeleccionado, setPoNeumaticoSeleccionado] = useState<any | null>(null);
 
   // Cargar datos de neu_asignado al abrir el modal
   React.useEffect(() => {
@@ -204,7 +231,35 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       ? ((valorActualRemanente * 100) / valorReferenciaRemanente).toFixed(2) + '%'
       : '';
 
-  const handleGuardarInspeccion = async () => {
+  // Cuando se selecciona un neumático, guardar el estado inicial del formulario
+  useEffect(() => {
+    if (neumaticoSeleccionado) {
+      setFormValuesInicial(formValues);
+    }
+    // eslint-disable-next-line
+  }, [neumaticoSeleccionado]);
+
+  // Función para comparar si hay cambios en el formulario respecto al inicial
+  const hayCambiosFormulario = React.useMemo(() => {
+    if (!formValuesInicial) return false;
+    // Compara solo los campos relevantes
+    const campos: (keyof FormValues)[] = [
+      'kilometro', 'remanente', 'presion_aire', 'torque', 'observacion', 'fecha_inspeccion'
+    ];
+    return campos.some(c => String(formValues[c] ?? '') !== String(formValuesInicial[c] ?? ''));
+  }, [formValues, formValuesInicial]);
+
+  // Guardar inspección localmente (no envía al backend)
+  const handleGuardarInspeccionLocal = () => {
+    if (!neumaticoSeleccionado) {
+      setSnackbar({ open: true, message: 'Debe seleccionar un neumático.', severity: 'error' });
+      return;
+    }
+    if (!hayCambiosFormulario) {
+      setSnackbar({ open: true, message: 'No hay cambios para guardar.', severity: 'info' });
+      return;
+    }
+    // Validaciones mínimas
     if (Odometro < Number(formValues.kilometro)) {
       setSnackbar({ open: true, message: `El número de kilometro no puede ser menor al actual (${formValues.kilometro} km).`, severity: 'error' });
       return;
@@ -213,81 +268,97 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${valorReferenciaRemanente}` , severity: 'error' });
       return;
     }
-    if (!neumaticoSeleccionado) {
-      setSnackbar({ open: true, message: 'Debe seleccionar un neumático.', severity: 'error' });
+    // Guardar/actualizar inspección localmente por posición
+    const nuevaInspeccion = { ...formValues };
+    setInspeccionesPendientes(prev => {
+      const idx = prev.findIndex(i => i.posicion === nuevaInspeccion.posicion);
+      let nuevoArray;
+      if (idx >= 0) {
+        const copia = [...prev];
+        copia[idx] = nuevaInspeccion;
+        nuevoArray = copia;
+      } else {
+        nuevoArray = [...prev, nuevaInspeccion];
+      }
+      console.log('Inspecciones guardadas localmente:', nuevoArray);
+      return nuevoArray;
+    });
+    setFormValuesInicial({ ...formValues });
+    setSnackbar({ open: true, message: 'Inspección guardada localmente.', severity: 'success' });
+  };
+
+  // Enviar todas las inspecciones pendientes al backend
+  const handleEnviarYGuardar = async () => {
+    if (inspeccionesPendientes.length !== 4) {
+      setSnackbar({ open: true, message: 'Debe inspeccionar los 4 neumáticos antes de enviar.', severity: 'error' });
       return;
     }
-    // Validar que poNeumaticoSeleccionado esté presente
-    if (!poNeumaticoSeleccionado) {
-      setSnackbar({ open: true, message: 'No se encontraron los datos completos del neumático.', severity: 'error' });
-      return;
-    }
-    // Fechas
+    // --- LOG para ver el array antes de enviar ---
+    // El array que se envía al backend debe tener la estructura final, no el array local crudo
     const now = new Date();
     const fechaActual = now.toISOString();
-    const fechaInspeccion = formValues.fecha_inspeccion ? new Date(formValues.fecha_inspeccion).toISOString() : fechaActual;
-    // Armar el payload completo
-    // Formatear fechas para campos tipo DATE (YYYY-MM-DD)
     const formatDate = (dateStr: string) => {
       if (!dateStr) return '';
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '';
       return d.toISOString().slice(0, 10);
     };
-    // Formatear TIMESTAMP (formato DB2: 'YYYY-MM-DD HH:mm:ss')
     const formatTimestamp = (dateStr: string) => {
       if (!dateStr) return '';
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return '';
-      // Reemplazar 'T' por espacio y quitar milisegundos
-      return d.toISOString().slice(0, 19).replace('T', ' ');
+      return d.toISOString().slice(0, 19).replace('T', 'T'); // Mantener formato ISO
     };
-    // Estado como decimal (porcentaje con decimales, por ejemplo 94.44)
-    const estadoDecimal = (() => {
-      const val = porcentajeRemanente?.toString().replace('%', '').trim();
-      const n = parseFloat(val);
-      return isNaN(n) ? 0 : n;
-    })();
-    const datosEnviar = {
-      // ID_INSPECCION eliminado, lo maneja la base de datos
-      CODIGO: String(formValues.codigo || ''),
-      MARCA: String(formValues.marca || ''),
-      MEDIDA: String(formValues.medida || ''),
-      DISEÑO: String(formValues.diseño || ''),
-      REMANENTE: parseInt(formValues.remanente) || 0,
-      PR: String(poNeumaticoSeleccionado.PR || ''),
-      CARGA: String(poNeumaticoSeleccionado.CARGA || ''),
-      VELOCIDAD: String(poNeumaticoSeleccionado.VELOCIDAD || ''),
-      FECHA_FABRICACION: String(poNeumaticoSeleccionado.FECHA_FABRICACION_COD || ''),
-      RQ: String(poNeumaticoSeleccionado.RQ || ''),
-      OC: String(poNeumaticoSeleccionado.OC || ''),
-      PROYECTO: String(vehiculo?.proyecto || ''),
-      COSTO: poNeumaticoSeleccionado.COSTO ? parseFloat(poNeumaticoSeleccionado.COSTO) : 0,
-      OBSERVACION: String(formValues.observacion || ''),
-      PROVEEDOR: String(poNeumaticoSeleccionado.PROVEEDOR || ''),
-      FECHA_REGISTRO: formatDate(formValues.fecha_inspeccion) || formatDate(new Date().toISOString()),
-      FECHA_COMPRA: formatDate(poNeumaticoSeleccionado.FECHA_COMPRA),
-      USUARIO_SUPER: String(user?.name || user?.usuario || ''),
-      TIPO_MOVIMIENTO: String(formValues.tipo_movimiento || ''),
-      PRESION_AIRE: formValues.presion_aire ? parseFloat(formValues.presion_aire) : 0,
-      TORQUE_APLICADO: formValues.torque ? parseFloat(formValues.torque) : 0,
-      ESTADO: estadoDecimal,
-      PLACA: String(placa || ''),
-      POSICION_NEU: String(formValues.posicion || ''),
-      FECHA_ASIGNACION: formatDate(new Date().toISOString()),
-      KILOMETRO: formValues.kilometro ? parseInt(formValues.kilometro) : 0,
-      FECHA_MOVIMIENTO: formatTimestamp(new Date().toISOString()),
-    };
-    console.log('Datos enviados a guardarInspeccion:', datosEnviar);
-    console.log('Payload FINAL enviado a guardarInspeccion (formato backend):', JSON.stringify(datosEnviar, null, 2));
+    const payloads = inspeccionesPendientes.map(ins => {
+      const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
+      // Calcular el estado (porcentaje) directamente usando remanente y referencia
+      const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
+      const referencia = poNeu?.REMANENTE ? parseFloat(poNeu.REMANENTE) : 0;
+      const estadoDecimal = referencia > 0 ? Math.round((remanente * 100) / referencia) : null;
+      // Construir el objeto en el orden exacto esperado por el backend, usando null en vez de string vacío
+      const obj = {
+        CARGA: poNeu?.CARGA ?? null,
+        CODIGO: ins.codigo ?? null,
+        COSTO: poNeu?.COSTO ? parseFloat(poNeu.COSTO) : null,
+        DISEÑO: ins.diseño ?? null,
+        ESTADO: estadoDecimal,
+        FECHA_ASIGNACION: formatDate(new Date().toISOString()) || null,
+        FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
+        FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
+        FECHA_MOVIMIENTO: formatTimestamp(new Date().toISOString()) || null,
+        FECHA_REGISTRO: formatDate(ins.fecha_inspeccion) || formatDate(new Date().toISOString()) || null,
+        KILOMETRO: ins.kilometro ? parseInt(ins.kilometro) : null,
+        MARCA: ins.marca ?? null,
+        MEDIDA: ins.medida ?? null,
+        OBSERVACION: ins.observacion ?? null,
+        OC: poNeu?.OC ?? null,
+        PLACA: placa ?? null,
+        POSICION_NEU: ins.posicion ?? null,
+        PR: poNeu?.PR ?? null,
+        PRESION_AIRE: ins.presion_aire ? parseFloat(ins.presion_aire) : null,
+        PROVEEDOR: poNeu?.PROVEEDOR ?? null,
+        PROYECTO: vehiculo?.proyecto ?? null,
+        REMANENTE: ins.remanente ? parseInt(ins.remanente) : null,
+        RQ: poNeu?.RQ ?? null,
+        TIPO_MOVIMIENTO: ins.tipo_movimiento ?? null,
+        TORQUE_APLICADO: ins.torque ? parseFloat(ins.torque) : null,
+        USUARIO_SUPER: user?.name || user?.usuario || null,
+        VELOCIDAD: poNeu?.VELOCIDAD ?? null,
+      };
+      return obj;
+    });
+    if (payloads.length > 0) {
+      console.log('Claves del primer objeto del payload:', Object.keys(payloads[0]));
+    }
+    console.log('Payload FINAL a enviar al backend:', payloads);
     try {
-      await guardarInspeccion(datosEnviar);
-      setSnackbar({ open: true, message: 'Inspección guardada correctamente.', severity: 'success' });
-      if (onUpdateAsignados) onUpdateAsignados(); // Refresca asignados si el padre lo provee
+      await guardarInspeccion(payloads); // El backend acepta array
+      setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
+      setInspeccionesPendientes([]);
+      if (onUpdateAsignados) onUpdateAsignados();
       onClose();
     } catch (error: any) {
-      const msg = error?.message || 'Error al guardar la inspección.';
-      setSnackbar({ open: true, message: msg, severity: 'error' });
+      setSnackbar({ open: true, message: error?.message || 'Error al enviar inspecciones.', severity: 'error' });
     }
   };
 
@@ -491,11 +562,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} color="primary" variant="contained">
-            Cerrar
-          </Button>
-          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleGuardarInspeccion}>
+          <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={!hayCambiosFormulario}>
             Guardar inspección
+          </Button>
+          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4}>
+            Enviar y Guardar
           </Button>
         </DialogActions>
       </Dialog>
