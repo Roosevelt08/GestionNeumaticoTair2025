@@ -112,6 +112,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   // Estado para mostrar modal de inspección ya realizada
   const [showInspeccionHoy, setShowInspeccionHoy] = useState(false);
   const [bloquearFormulario, setBloquearFormulario] = useState(false);
+  const [alertaInspeccionHoy, setAlertaInspeccionHoy] = useState(false); // NUEVO
 
   // Cargar datos de neu_asignado al abrir el modal o cuando cambie la placa
   React.useEffect(() => {
@@ -148,24 +149,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   // Verificar si ya existe inspección hoy al abrir el modal
   useEffect(() => {
     if (open && placa) {
-      // Aquí deberías consultar al backend si ya existe inspección hoy para la placa
-      // Simulación: reemplaza esto por tu consulta real
-      (async () => {
-        try {
-          // Ejemplo: const existe = await existeInspeccionHoy(placa);
-          const existe = false; // Cambia a true para probar el flujo de bloqueo
-          if (existe) {
-            setShowInspeccionHoy(true);
-            setBloquearFormulario(true);
-          } else {
-            setShowInspeccionHoy(false);
-            setBloquearFormulario(false);
-          }
-        } catch {
-          setShowInspeccionHoy(false);
-          setBloquearFormulario(false);
-        }
-      })();
+      // Simulación solo frontend: mostrar alerta siempre que se abra el modal
+      setAlertaInspeccionHoy(true);
+      setBloquearFormulario(true);
+      // Si quieres que solo se muestre una vez por día, puedes guardar en localStorage con la fecha
     }
   }, [open, placa]);
 
@@ -412,6 +399,20 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   return (
     <>
+      <Dialog open={alertaInspeccionHoy} onClose={() => setAlertaInspeccionHoy(false)}>
+        <DialogTitle>¡Atención!</DialogTitle>
+        <DialogContent>
+          <Typography>Ya se registró una inspección para este vehículo hoy.</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Si necesitas hacer otra inspección, presiona Continuar.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setAlertaInspeccionHoy(false); setBloquearFormulario(false); }} color="primary" variant="contained">
+            Continuar inspección
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={showInspeccionHoy} onClose={() => setShowInspeccionHoy(false)}>
         <DialogTitle>Inspección ya realizada</DialogTitle>
         <DialogContent>
