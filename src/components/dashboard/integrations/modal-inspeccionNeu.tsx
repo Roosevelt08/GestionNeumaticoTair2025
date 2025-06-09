@@ -86,7 +86,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     fecha_inspeccion: '', // <-- Agregado para evitar el error
   });
   const [openMantenimiento, setOpenMantenimiento] = useState(false);
-  const [neuAsignados, setNeuAsignados] = useState<any[]>([]);
+  // Estado para la lista de neumáticos asignados (siempre actualizada)
+  const [neuAsignados, setNeuAsignados] = React.useState<any[]>([]);
   const [kmError, setKmError] = React.useState(false);
   const [Odometro, setOdometro] = React.useState(0);
   const [remanenteError, setRemanenteError] = React.useState(false);
@@ -108,12 +109,32 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   // Estado para el po_neumatico seleccionado (debe estar definido)
   const [poNeumaticoSeleccionado, setPoNeumaticoSeleccionado] = useState<any | null>(null);
 
-  // Cargar datos de neu_asignado al abrir el modal
+  // Estado para mostrar modal de inspección ya realizada
+  const [showInspeccionHoy, setShowInspeccionHoy] = useState(false);
+  const [bloquearFormulario, setBloquearFormulario] = useState(false);
+
+  // Cargar datos de neu_asignado al abrir el modal o cuando cambie la placa
   React.useEffect(() => {
     if (open && placa) {
       listarNeumaticosAsignados(placa)
-        .then(setNeuAsignados)
-        .catch(() => setNeuAsignados([]));
+        .then((data) => {
+          setNeuAsignados(data || []);
+          console.log('neuAsignados después de listarNeumaticosAsignados:', data);
+          // Limpiar selección y formulario si los asignados cambian
+          setNeumaticoSeleccionado(null);
+          setFormValues({
+            kilometro: '', marca: '', modelo: '', codigo: '', posicion: '', medida: '', diseño: '', remanente: '', presion_aire: '', torque: '', tipo_movimiento: '', estado: '', observacion: '', fecha_inspeccion: '',
+          });
+          setFormValuesInicial(null);
+        })
+        .catch(() => {
+          setNeuAsignados([]);
+          setNeumaticoSeleccionado(null);
+          setFormValues({
+            kilometro: '', marca: '', modelo: '', codigo: '', posicion: '', medida: '', diseño: '', remanente: '', presion_aire: '', torque: '', tipo_movimiento: '', estado: '', observacion: '', fecha_inspeccion: '',
+          });
+          setFormValuesInicial(null);
+        });
     }
   }, [open, placa]);
 
@@ -124,17 +145,46 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     }
   }, [open]);
 
+  // Verificar si ya existe inspección hoy al abrir el modal
+  useEffect(() => {
+    if (open && placa) {
+      // Aquí deberías consultar al backend si ya existe inspección hoy para la placa
+      // Simulación: reemplaza esto por tu consulta real
+      (async () => {
+        try {
+          // Ejemplo: const existe = await existeInspeccionHoy(placa);
+          const existe = false; // Cambia a true para probar el flujo de bloqueo
+          if (existe) {
+            setShowInspeccionHoy(true);
+            setBloquearFormulario(true);
+          } else {
+            setShowInspeccionHoy(false);
+            setBloquearFormulario(false);
+          }
+        } catch {
+          setShowInspeccionHoy(false);
+          setBloquearFormulario(false);
+        }
+      })();
+    }
+  }, [open, placa]);
+
   // Cuando se selecciona un neumático, llenar el formulario con datos completos de neu_asignado
   const handleSeleccionarNeumatico = async (neumatico: any) => {
-    setNeumaticoSeleccionado(neumatico);
-    const neuFull = neuAsignados.find(n => n.POSICION === neumatico.POSICION || n.POSICION_NEU === neumatico.POSICION);
+    console.log('neumatico clickeado:', neumatico);
+    console.log('neuAsignados en handleSeleccionarNeumatico:', neuAsignados);
+    // Buscar el neumático realmente asignado a la posición clickeada Y con el mismo código
+    const neuActual = neuAsignados.find(
+      n =>
+        (n.POSICION === neumatico.POSICION || n.POSICION_NEU === neumatico.POSICION) &&
+        (n.CODIGO === neumatico.CODIGO)
+    );
+    console.log('neuActual encontrado:', neuActual);
+    const neuFull = neuActual || neumatico; // Usar el asignado, o el recibido si no hay
+    setNeumaticoSeleccionado(neuFull);
     // Buscar datos completos en po_neumaticos por código
-    const codigoBuscar = neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? neumatico.CODIGO_NEU ?? neumatico.CODIGO ?? '';
-    //console.log('poNeumaticos:', poNeumaticos);
-    console.log('codigoBuscar:', codigoBuscar);
+    const codigoBuscar = neuFull?.CODIGO_NEU ?? neuFull?.CODIGO ?? '';
     const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(codigoBuscar));
-    console.log('poNeu encontrado:', poNeu);
-    setPoNeumaticoSeleccionado(poNeu || null);
     // Obtener el último movimiento real desde el backend
     let remanenteUltimoMovimiento = '';
     let presionUltimoMovimiento = '';
@@ -152,34 +202,32 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         const asignacion = movimientos.find((m: any) => m.TIPO_MOVIMIENTO === 'ASIGNADO' || m.TIPO_MOVIMIENTO === 'ASIGNACION');
         setRemanenteAsignacionReal(asignacion ? Number(asignacion.REMANENTE) : null);
       } else {
-        remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '';
-        presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '';
-        torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '';
-        kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? neumatico.KILOMETRO?.toString() ?? '';
-        // Si no hay movimientos de asignación, usar el REMANENTE de poNeumaticos como referencia inicial
+        remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? '';
+        presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? '';
+        torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? '';
+        kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? '';
         setRemanenteAsignacionReal(poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : null);
       }
     } catch (e) {
-      remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? neumatico.REMANENTE?.toString() ?? '';
-      presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? neumatico.PRESION_AIRE?.toString() ?? '';
-      torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? neumatico.TORQUE_APLICADO?.toString() ?? '';
-      kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? neumatico.KILOMETRO?.toString() ?? '';
-      // Si hay error, usar el REMANENTE de poNeumaticos como referencia inicial
+      remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? '';
+      presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? '';
+      torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? '';
+      kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? '';
       setRemanenteAsignacionReal(poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : null);
     }
     setRemanenteUltimoMovimiento(remanenteUltimoMovimiento ? Number(remanenteUltimoMovimiento) : null);
     setFormValues({
       kilometro: kilometroUltimoMovimiento || (neuFull?.ODOMETRO?.toString() ?? neuFull?.KILOMETRO?.toString() ?? ''),
-      marca: neuFull?.MARCA ?? neumatico.MARCA ?? '',
-      modelo: neuFull?.MODELO ?? neumatico.MODELO ?? '',
+      marca: neuFull?.MARCA ?? '',
+      modelo: neuFull?.MODELO ?? '',
       codigo: codigoBuscar,
-      posicion: neuFull?.POSICION ?? neumatico.POSICION ?? '',
-      medida: neuFull?.MEDIDA ?? neumatico.MEDIDA ?? '',
-      diseño: neuFull?.DISEÑO ?? neumatico.DISEÑO ?? '',
+      posicion: neuFull?.POSICION ?? neuFull?.POSICION_NEU ?? '',
+      medida: neuFull?.MEDIDA ?? '',
+      diseño: neuFull?.DISEÑO ?? '',
       remanente: remanenteUltimoMovimiento,
       tipo_movimiento: 'INSPECCION',
-      estado: neuFull?.ESTADO ?? neumatico.ESTADO ?? '',
-      observacion: neuFull?.OBSERVACION ?? neumatico.OBSERVACION ?? '',
+      estado: neuFull?.ESTADO ?? '',
+      observacion: neuFull?.OBSERVACION ?? '',
       presion_aire: presionUltimoMovimiento,
       torque: torqueUltimoMovimiento,
       fecha_inspeccion: '',
@@ -194,8 +242,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         .sort((a: any, b: any) => new Date(b.FECHA_MOVIMIENTO).getTime() - new Date(a.FECHA_MOVIMIENTO).getTime())[0];
       remanenteRef = asignacion?.REMANENTE ?? null;
     }
-    setRemanenteAsignacion(remanenteRef !== null ? Number(remanenteRef) : (poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : Number(neuFull?.REMANENTE ?? neumatico.REMANENTE ?? 0)));
-    if (onSeleccionarNeumatico) onSeleccionarNeumatico(neumatico);
+    setRemanenteAsignacion(remanenteRef !== null ? Number(remanenteRef) : (poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : Number(neuFull?.REMANENTE ?? 0)));
+    if (onSeleccionarNeumatico) onSeleccionarNeumatico(neuFull);
   };
 
   // Manejar apertura de mantenimiento y cierre de inspección
@@ -364,6 +412,21 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   return (
     <>
+      <Dialog open={showInspeccionHoy} onClose={() => setShowInspeccionHoy(false)}>
+        <DialogTitle>Inspección ya realizada</DialogTitle>
+        <DialogContent>
+          <Typography>Hoy ya se realizó una inspección para este vehículo.</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Si desea modificar la inspección, presione "Continuar inspección".</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setShowInspeccionHoy(false); setBloquearFormulario(false); }} color="primary" variant="contained">
+            Continuar inspección
+          </Button>
+          <Button onClick={onClose} color="secondary" variant="outlined">
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
         {/* <DialogTitle sx={{ fontWeight: 'bold', color: '#388e3c' }}>Inspección de Neumáticos</DialogTitle> */}
         <DialogContent>
@@ -418,11 +481,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               </Card>
               <Card sx={{ p: 2 }}>
                 <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2 }}>
-                  <TextField label="Código" name="codigo" size="small" value={formValues.codigo} inputProps={{ readOnly: true, style: { minWidth: `${formValues.codigo.length + 3}ch` } }} />
-                  <TextField label="Marca" name="marca" size="small" value={formValues.marca} inputProps={{ readOnly: true, style: { minWidth: `${formValues.marca.length + 3}ch` } }} />
-                  <TextField label="Medida" name="medida" size="small" value={formValues.medida} inputProps={{ readOnly: true, style: { minWidth: `${formValues.medida.length + 3}ch` } }} />
-                  <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} inputProps={{ readOnly: true, style: { minWidth: `${formValues.diseño.length + 3}ch` } }} />
-                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: { minWidth: `${formValues.posicion.length + 3}ch` } }} />
+                  <TextField label="Código" name="codigo" size="small" value={formValues.codigo} inputProps={{ readOnly: true, style: { minWidth: `${formValues.codigo.length + 3}ch` } }} disabled={bloquearFormulario} />
+                  <TextField label="Marca" name="marca" size="small" value={formValues.marca} inputProps={{ readOnly: true, style: { minWidth: `${formValues.marca.length + 3}ch` } }} disabled={bloquearFormulario} />
+                  <TextField label="Medida" name="medida" size="small" value={formValues.medida} inputProps={{ readOnly: true, style: { minWidth: `${formValues.medida.length + 3}ch` } }} disabled={bloquearFormulario} />
+                  <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} inputProps={{ readOnly: true, style: { minWidth: `${formValues.diseño.length + 3}ch` } }} disabled={bloquearFormulario} />
+                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: { minWidth: `${formValues.posicion.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField
                     label="Kilometro"
                     type="number"
@@ -454,6 +517,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                       },
                     }}
                     fullWidth
+                    disabled={bloquearFormulario}
                   />
                   <TextField
                     label="Remanente"
@@ -478,18 +542,20 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                         : `Remanente original: ${remanenteAsignacionReal ?? poNeumaticoSeleccionado?.REMANENTE ?? '-'}`
                     }
                     inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }}
+                    disabled={bloquearFormulario}
                   />
-                  <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} />
-                  <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} />
+                  <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} disabled={bloquearFormulario} />
+                  <TextField label="Torque (Nm)" name="torque" type="number" size="small" value={formValues.torque ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.torque ?? '').toString().length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField
                     label="Tipo Movimiento"
                     name="tipo_movimiento"
                     size="small"
                     value="INSPECCION"
                     InputProps={{ readOnly: true, style: { minWidth: `${'INSPECCION'.length + 3}ch` } }}
+                    disabled={bloquearFormulario}
                   />
-                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} />
-                  <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} />
+                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
+                  <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField
                     label="Fecha y hora de inspección"
                     name="fecha_inspeccion"
@@ -502,6 +568,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     InputLabelProps={{ shrink: true }}
                     inputProps={{ max: new Date().toISOString().slice(0, 16) }}
                     sx={{ gridColumn: 'span 2' }}
+                    disabled={bloquearFormulario}
                   />
 
                 </Box>
@@ -562,10 +629,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={!hayCambiosFormulario}>
+          <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={!hayCambiosFormulario || bloquearFormulario}>
             Guardar inspección
           </Button>
-          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4}>
+          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4 || bloquearFormulario}>
             Enviar y Guardar
           </Button>
         </DialogActions>
