@@ -691,7 +691,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         >
                                             {kmError
                                                 ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
-                                                : `Kilometro: ${initialOdometro.toLocaleString()} km`}
+                                                : `Kilometro actual: ${Odometro.toLocaleString()} km`}
                                         </Typography>
                                     </Box>
                                     <Button
@@ -884,5 +884,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
 
 
 export default ModalAsignacionNeu;
+
+// IMPORTANTE: Solo handleConfirm dispara onAssignedUpdate (refresco de datos y animación de kilometraje).
+// El cierre normal del modal (handleDialogClose/onClose) NO refresca datos ni anima el kilometraje.
+// Asegúrate de que el padre (page.tsx) solo refresque datos en onAssignedUpdate, no en onClose.
 
 

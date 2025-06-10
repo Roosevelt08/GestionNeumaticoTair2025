@@ -110,20 +110,15 @@ export default function Page(): React.JSX.Element {
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
 
-        try {
-          const asignados = await obtenerNeumaticosAsignadosPorPlaca(placa);
-          if (asignados.length === 0) {
-            setSnackbarMessage('No hay neumáticos asignados para esta placa.');
-            setSnackbarSeverity('info');
-            setSnackbarOpen(true);
-          }
-          setNeumaticosAsignados(asignados);
-        } catch (err) {
-          console.error('Error al obtener los neumáticos asignados:', err);
-          setSnackbarMessage('Error al obtener los neumáticos asignados.');
-          setSnackbarSeverity('error');
-          setSnackbarOpen(true);
-        }
+        // Obtener los movimientos de neumáticos y calcular el último kilometraje real
+        const movimientos = await obtenerUltimosMovimientosPorPlaca(placa);
+        setNeumaticosAsignados(movimientos);
+        // Calcular el mayor kilometraje de los movimientos (tipado explícito)
+        const odometros = (movimientos as any[])
+          .map((n: any) => Number(n.Odometro ?? n.ODOMETRO ?? n.KILOMETRO ?? n.KILOMETRAJE))
+          .filter((v: number) => !isNaN(v) && v > 0);
+        const ultimoKmReal = odometros.length > 0 ? Math.max(...odometros) : Number(vehiculoData.KILOMETRO ?? vehiculoData.KILOMETRAJE ?? 0);
+        animateKilometraje(0, ultimoKmReal);
 
         const listaNeumaticos = await Neumaticos();
         // Filtrar por USUARIO_SUPER si existe user
@@ -140,8 +135,6 @@ export default function Page(): React.JSX.Element {
           }));
         setNeumaticos(listaNeumaticos);
         setNeumaticosFiltrados(filtrados);
-
-        animateKilometraje(0, vehiculoData.KILOMETRAJE);
         animateTotalNeumaticos(0, filtrados.length);
       } catch (err) {
         console.error('Error al buscar el vehículo:', err);
@@ -300,6 +293,22 @@ export default function Page(): React.JSX.Element {
     }
   };
 
+  // Refresca los datos del vehículo desde el backend
+  const refreshVehiculo = async () => {
+    if (vehiculo?.PLACA) {
+      try {
+        const vehiculoData = await buscarVehiculoPorPlaca(vehiculo.PLACA);
+        if (vehiculoData) {
+          setVehiculo(vehiculoData);
+          // NO volver a animar el kilometraje aquí, para evitar mostrar un valor antiguo
+          // animateKilometraje(0, vehiculoData.KILOMETRAJE); // Eliminado
+        }
+      } catch (e) {
+        // Opcional: mostrar error
+      }
+    }
+  };
+
   // Log para depuración ANTES del return, nunca dentro del JSX
   // console.log('Antes de abrir ModalAsignacionNeu:', {
   //   neumaticosAsignados,
@@ -373,6 +382,32 @@ export default function Page(): React.JSX.Element {
     }
     return Array.from(porCodigo.values());
   }, [neumaticosAsignados]);
+
+  // Calcular el último kilometraje real desde los movimientos de neumáticos asignados
+  const ultimoKilometroReal = React.useMemo(() => {
+    const odometros = neumaticosAsignadosUnicos
+      .map(n => {
+        // Soporta string con comas, números, y distintos nombres de campo
+        const raw = (n as any)['Odometro'] ?? (n as any)['ODOMETRO'] ?? (n as any)['KILOMETRO'] ?? (n as any)['KILOMETRAJE'];
+        if (typeof raw === 'string') {
+          // Elimina comas de miles y convierte a número
+          return Number(raw.replace(/,/g, ''));
+        }
+        return Number(raw);
+      })
+      .filter(v => !isNaN(v) && v > 0);
+    if (odometros.length > 0) {
+      return Math.max(...odometros);
+    }
+    // Fallback: usar el del vehículo
+    return Number(vehiculo?.KILOMETRO ?? vehiculo?.KILOMETRAJE ?? 0);
+  }, [neumaticosAsignadosUnicos, vehiculo]);
+
+  // Animar el kilometraje mostrado cuando cambie el valor real
+  useEffect(() => {
+    animateKilometraje(0, ultimoKilometroReal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ultimoKilometroReal]);
 
   return (
     <Stack spacing={3}>
@@ -774,10 +809,7 @@ export default function Page(): React.JSX.Element {
       </Snackbar>
       <ModalAsignacionNeu
         open={openModal}
-        onClose={() => {
-          handleCloseModal();
-          refreshAsignados(); // Refresca asignados al cerrar
-        }}
+        onClose={handleCloseModal} // Solo cierra el modal, NO refresca datos ni kilometraje
         data={neumaticosFiltrados.map((neumatico) => ({
           ...neumatico,
           CODIGO: neumatico.CODIGO, // Ahora solo usar CODIGO
@@ -786,8 +818,13 @@ export default function Page(): React.JSX.Element {
         }))}
         assignedNeumaticos={neumaticosAsignados}
         placa={vehiculo?.PLACA ?? ''}
-        kilometro={vehiculo?.KILOMETRO ?? vehiculo?.KILOMETRAJE ?? 0}
-        onAssignedUpdate={refreshAsignados} 
+        kilometro={ultimoKilometroReal}
+        onAssignedUpdate={async () => {
+          await refreshAsignados();
+          setTimeout(async () => {
+            await refreshVehiculo();
+          }, 2500);
+        }}
       />
 
       <ModalDeleteNeu
