@@ -124,14 +124,14 @@ const DropZone: React.FC<DropZoneProps> = ({
     const [lastRemovedCode, setLastRemovedCode] = React.useState<string | null>(null);
     const [isShaking, setIsShaking] = React.useState<boolean>(false);
     const [inputsModalOpen, setInputsModalOpen] = React.useState<boolean>(false);
-    const [pendingInputs, setPendingInputs] = React.useState<null | { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number }>(null);
+    const [pendingInputs, setPendingInputs] = React.useState<null | { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number; FechaAsignacion: string }>(null);
 
     const triggerShake = (): void => {
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600); // Dura 600ms
     };
     
-    const handleInputsModalSubmit = (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number }): void => {
+    const handleInputsModalSubmit = (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number; FechaAsignacion: string }): void => {
         // Guarda los datos en el neumático asignado a esta posición
         setAssignedNeumaticos((prev) => {
             const current = prev[position];
@@ -144,6 +144,7 @@ const DropZone: React.FC<DropZoneProps> = ({
                     PRESION_AIRE: data.PresionAire,
                     TORQUE_APLICADO: data.TorqueAplicado,
                     ODOMETRO: data.Odometro,
+                    FECHA_ASIGNACION: data.FechaAsignacion,
                 },
             };
         });
@@ -418,6 +419,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                     const presionAire = typeof neu!.PRESION_AIRE === 'string' ? parseFloat(neu!.PRESION_AIRE) : (neu!.PRESION_AIRE ?? 0);
                     const torqueAplicado = typeof neu!.TORQUE_APLICADO === 'string' ? parseFloat(neu!.TORQUE_APLICADO) : (neu!.TORQUE_APLICADO ?? 0);
                     const odometro = typeof neu!.ODOMETRO === 'string' ? parseFloat(neu!.ODOMETRO) : (neu!.ODOMETRO ?? kilometro);
+                    const fechaAsignacion = neu!.FECHA_ASIGNACION || new Date().toISOString().slice(0, 10);
                     const payload = {
                         CodigoNeumatico: codigo,
                         Remanente: remanente,
@@ -426,6 +428,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                         Placa: placa,
                         Posicion: pos,
                         Odometro: odometro,
+                        FechaRegistro: fechaAsignacion,
                     };
                     console.log('Enviando a asignarNeumatico:', payload);
                     return asignarNeumatico(payload);

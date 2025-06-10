@@ -6,7 +6,7 @@ import { useTheme } from '@mui/material/styles';
 interface ModalInputsNeuProps {
     open: boolean;
     onClose: () => void;
-    onSubmit: (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number }) => void;
+    onSubmit: (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number; FechaAsignacion: string }) => void;
     initialRemanente?: number; // Nuevo prop para autofill
     initialOdometro?: number;
     initialPresionAire?: number;
@@ -21,6 +21,7 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
     const [kmError, setKmError] = React.useState(false); // Estado para el error del kilometraje
     const [presionError, setPresionError] = React.useState(false);
     const [torqueError, setTorqueError] = React.useState(false);
+    const [fechaAsignacion, setFechaAsignacion] = React.useState<string>('');
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -34,6 +35,7 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
             setKmError(false);
             setPresionError(false);
             setTorqueError(false);
+            setFechaAsignacion('');
         }
     }, [open, initialRemanente, initialOdometro, initialPresionAire, initialTorqueAplicado]);
 
@@ -50,7 +52,7 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
             setTorqueError(true);
             return;
         }
-        onSubmit({ Odometro, Remanente, PresionAire, TorqueAplicado });
+        onSubmit({ Odometro, Remanente, PresionAire, TorqueAplicado, FechaAsignacion: fechaAsignacion });
         onClose();
     };
 
@@ -170,6 +172,14 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                             }}
                         />
                     </Stack>
+                    <TextField
+                        label="Fecha de Asignación"
+                        type="date"
+                        value={fechaAsignacion}
+                        onChange={e => setFechaAsignacion(e.target.value)}
+                        fullWidth
+                        InputLabelProps={{ shrink: true }}
+                    />
                     <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth>
                         Guardar
                     </Button>
