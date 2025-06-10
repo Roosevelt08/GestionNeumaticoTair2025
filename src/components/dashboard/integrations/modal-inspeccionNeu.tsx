@@ -114,6 +114,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const [bloquearFormulario, setBloquearFormulario] = useState(false);
   const [alertaInspeccionHoy, setAlertaInspeccionHoy] = useState(false); // NUEVO
 
+  // Estado para controlar si ya se inspeccionó hoy
+  const [inspeccionHoyRealizada, setInspeccionHoyRealizada] = useState(false);
+
   // Cargar datos de neu_asignado al abrir el modal o cuando cambie la placa
   React.useEffect(() => {
     if (open && placa) {
@@ -391,11 +394,36 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
       setInspeccionesPendientes([]);
       if (onUpdateAsignados) onUpdateAsignados();
+      marcarInspeccionHoy(); // Marcar inspección realizada hoy
       onClose();
     } catch (error: any) {
       setSnackbar({ open: true, message: error?.message || 'Error al enviar inspecciones.', severity: 'error' });
     }
   };
+
+  // Guardar en localStorage la fecha de la última inspección exitosa
+  const marcarInspeccionHoy = () => {
+    const hoy = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(`inspeccion_${placa}`, hoy);
+    setInspeccionHoyRealizada(true);
+  };
+
+  // Al abrir el modal, verificar si ya se inspeccionó hoy
+  useEffect(() => {
+    if (open && placa) {
+      const hoy = new Date().toISOString().slice(0, 10);
+      const ultima = localStorage.getItem(`inspeccion_${placa}`);
+      if (ultima === hoy) {
+        setAlertaInspeccionHoy(true);
+        setBloquearFormulario(true);
+        setInspeccionHoyRealizada(true);
+      } else {
+        setAlertaInspeccionHoy(false);
+        setBloquearFormulario(false);
+        setInspeccionHoyRealizada(false);
+      }
+    }
+  }, [open, placa]);
 
   return (
     <>
