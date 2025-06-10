@@ -44,7 +44,7 @@ export interface ModalAsignacionNeuProps {
     assignedNeumaticos: Neumatico[]; // Added this property
     placa: string;
     kilometro: number;
-            onAssignedUpdate?: () => void; // Nuevo callback para refrescar asignados
+    onAssignedUpdate?: () => void; // Nuevo callback para refrescar asignados
 }
 
 const DraggableNeumatico: React.FC<{
@@ -130,7 +130,7 @@ const DropZone: React.FC<DropZoneProps> = ({
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600); // Dura 600ms
     };
-    
+
     const handleInputsModalSubmit = (data: { Odometro: number; Remanente: number; PresionAire: number; TorqueAplicado: number; FechaAsignacion: string }): void => {
         // Guarda los datos en el neumático asignado a esta posición
         setAssignedNeumaticos((prev) => {
@@ -277,7 +277,7 @@ const DropZone: React.FC<DropZoneProps> = ({
 
 
 const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, data, assignedNeumaticos: initialAssignedNeumaticos, placa, kilometro, onAssignedUpdate }) => {
-//console.log('ModalAsignacionNeu props:', { open, onClose, data, initialAssignedNeumaticos, placa, kilometro, onAssignedUpdate });
+    //console.log('ModalAsignacionNeu props:', { open, onClose, data, initialAssignedNeumaticos, placa, kilometro, onAssignedUpdate });
     const initialAssignedMap = useMemo<Record<string, Neumatico | null>>(
         () => {
             // Arranco con las cuatro posiciones en null
@@ -288,9 +288,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                 POS04: null,
             };
             initialAssignedNeumaticos.forEach((neu) => {
-                const pos = neu.POSICION_NEU;      
+                const pos = neu.POSICION_NEU;
                 if (pos && mapa.hasOwnProperty(pos)) {
-                    mapa[pos] = neu;             
+                    mapa[pos] = neu;
                 }
             });
             return mapa;
@@ -304,7 +304,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     // Snackbar personalizado para feedback visual
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMsg, setSnackbarMsg] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState<'success'|'error'|'info'|'warning'>('success');
+    const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
 
 
 
@@ -400,45 +400,62 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             ([pos, neu]) => {
                 if (!neu) return false;
                 const prev = initialAssignedMap[pos];
-                // Considerar vacía si no hay anterior o si el anterior es BAJA DEFINITIVA o RECUPERADO
                 const prevEsBajaORecuperado = prev && (prev.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || prev.TIPO_MOVIMIENTO === 'RECUPERADO');
                 return prev == null || prevEsBajaORecuperado;
             }
         );
         if (toAssign.length === 0) {
-            setSnackbarMsg('No hay cambios pendientes.');
+            setSnackbarMsg('No hay neumáticos nuevos por asignar. El kilometraje no se actualiza aquí.');
             setSnackbarSeverity('info');
             setSnackbarOpen(true);
             return;
         }
+        // Validación robusta de campos requeridos
+        const camposRequeridos = ['CODIGO', 'REMANENTE', 'PRESION_AIRE', 'TORQUE_APLICADO'];
+        for (const [pos, neu] of toAssign) {
+            for (const campo of camposRequeridos) {
+                // Permite 0 como valor válido, pero no null, undefined o NaN
+                const valor = (neu as any)[campo] ?? (neu as any)[campo.toUpperCase()];
+                if (valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '') || (typeof valor === 'number' && isNaN(valor))) {
+                    setSnackbarMsg(`Falta completar el campo "${campo}" en la posición ${pos}.`);
+                    setSnackbarSeverity('error');
+                    setSnackbarOpen(true);
+                    return;
+                }
+                // Validación extra: el backend no acepta 0, así que bloqueamos 0 explícitamente
+                if (typeof valor === 'number' && valor === 0) {
+                    setSnackbarMsg(`El campo "${campo}" no puede ser 0 en la posición ${pos}.`);
+                    setSnackbarSeverity('error');
+                    setSnackbarOpen(true);
+                    return;
+                }
+            }
+        }
         try {
-            await Promise.all(
-                toAssign.map(([pos, neu]) => {
-                    const codigo = Number(neu!.CODIGO ?? neu!.CODIGO_NEU);
-                    const remanente = typeof neu!.REMANENTE === 'string' ? parseFloat(neu!.REMANENTE) : (neu!.REMANENTE ?? 0);
-                    const presionAire = typeof neu!.PRESION_AIRE === 'string' ? parseFloat(neu!.PRESION_AIRE) : (neu!.PRESION_AIRE ?? 0);
-                    const torqueAplicado = typeof neu!.TORQUE_APLICADO === 'string' ? parseFloat(neu!.TORQUE_APLICADO) : (neu!.TORQUE_APLICADO ?? 0);
-                    const odometro = typeof neu!.ODOMETRO === 'string' ? parseFloat(neu!.ODOMETRO) : (neu!.ODOMETRO ?? kilometro);
-                    const fechaAsignacion = neu!.FECHA_ASIGNACION || new Date().toISOString().slice(0, 10);
-                    const payload = {
-                        CodigoNeumatico: codigo,
-                        Remanente: remanente,
-                        PresionAire: presionAire,
-                        TorqueAplicado: torqueAplicado,
-                        Placa: placa,
-                        Posicion: pos,
-                        Odometro: odometro,
-                        FechaRegistro: fechaAsignacion,
-                    };
-                    console.log('Enviando a asignarNeumatico:', payload);
-                    return asignarNeumatico(payload);
-                })
-            );
-            setSnackbarMsg('Neumático asignado.');
+            const payloadArray = toAssign.map(([pos, neu]) => {
+                const codigo = Number(neu!.CODIGO ?? neu!.CODIGO_NEU);
+                const remanente = typeof neu!.REMANENTE === 'string' ? parseFloat(neu!.REMANENTE) : (neu!.REMANENTE ?? 0);
+                const presionAire = typeof neu!.PRESION_AIRE === 'string' ? parseFloat(neu!.PRESION_AIRE) : (neu!.PRESION_AIRE ?? 0);
+                const torqueAplicado = typeof neu!.TORQUE_APLICADO === 'string' ? parseFloat(neu!.TORQUE_APLICADO) : (neu!.TORQUE_APLICADO ?? 0);
+                const fechaAsignacion = neu!.FECHA_ASIGNACION || new Date().toISOString().slice(0, 10);
+                return {
+                    CodigoNeumatico: codigo,
+                    Remanente: remanente,
+                    PresionAire: presionAire,
+                    TorqueAplicado: torqueAplicado,
+                    Placa: typeof placa === 'string' ? placa.trim() : placa,
+                    Posicion: pos,
+                    Odometro: Odometro,
+                    FechaRegistro: fechaAsignacion,
+                };
+            });
+            console.log('Payload enviado a asignarNeumatico:', payloadArray);
+            await asignarNeumatico(payloadArray); // axios ya envía Content-Type: application/json
+            setSnackbarMsg('Neumático(s) asignado(s).');
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
             if (typeof onAssignedUpdate === 'function') {
-                await onAssignedUpdate(); // Notifica al padre para refrescar asignados
+                await onAssignedUpdate();
             }
             onClose();
         } catch (e: any) {
@@ -449,6 +466,19 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
         }
     };
     // ------------------------------------------------
+
+
+    // Definir estados para Odometro, initialOdometro y kmError
+    const [Odometro, setOdometro] = useState<number>(kilometro || 0);
+    const [initialOdometro, setInitialOdometro] = useState<number>(kilometro || 0);
+    const [kmError, setKmError] = useState<boolean>(false);
+
+    // Sincronizar Odometro e initialOdometro cuando cambie la prop kilometro o al abrir el modal
+    useEffect(() => {
+        setOdometro(kilometro || 0);
+        setInitialOdometro(kilometro || 0);
+        setKmError(false);
+    }, [kilometro, open]);
 
 
     return (
@@ -596,9 +626,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     variant="h6"
                                     sx={{
                                         position: 'absolute',
-                                        top: '700px', 
-                                        left: '220px', 
-                                        transform: 'translateX(-50%)', 
+                                        top: '700px',
+                                        left: '220px',
+                                        transform: 'translateX(-50%)',
                                         zIndex: 2,
                                         color: 'black',
                                         padding: '5px 10px',
@@ -618,6 +648,52 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                             <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="h6">Neumáticos Actuales</Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <TextField
+                                            label="Kilometro"
+                                            type="number"
+                                            value={Odometro}
+                                            onChange={(e) => {
+                                                const value = Number(e.target.value);
+                                                if (value >= initialOdometro) {
+                                                    setOdometro(value);
+                                                    setKmError(false);
+                                                } else {
+                                                    setOdometro(value);
+                                                    setKmError(true);
+                                                }
+                                            }}
+                                            fullWidth
+                                            error={kmError}
+                                            InputProps={{
+                                                inputProps: { min: initialOdometro },
+                                                sx: {
+                                                    'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
+                                                        WebkitAppearance: 'none',
+                                                        margin: 0,
+                                                    },
+                                                    'input[type=number]': {
+                                                        MozAppearance: 'textfield',
+                                                    },
+                                                },
+                                            }}
+                                            sx={{ maxWidth: 180, ml: 2 }}
+                                        />
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                color: kmError ? 'error.main' : 'text.secondary',
+                                                minWidth: 180,
+                                                ml: 1,
+                                                whiteSpace: 'nowrap',
+                                                fontWeight: kmError ? 'bold' : 'normal',
+                                            }}
+                                        >
+                                            {kmError
+                                                ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
+                                                : `Kilometro: ${initialOdometro.toLocaleString()} km`}
+                                        </Typography>
+                                    </Box>
                                     <Button
                                         variant="contained"
                                         color="primary"

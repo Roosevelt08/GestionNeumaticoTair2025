@@ -416,7 +416,7 @@ export default function Page(): React.JSX.Element {
                     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
                   }}
                 >
-                  {`Último Kilometraje ${animatedKilometraje.toLocaleString()} km`}
+                  {`Último Kilometro ${animatedKilometraje.toLocaleString()} km`}
                 </Box>
                 {/* Ícono de neumáticos */}
                 <Box

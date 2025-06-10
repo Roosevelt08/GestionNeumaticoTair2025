@@ -70,22 +70,12 @@ export const obtenerNeumaticosAsignadosPorPlaca = async (placa) => {
   }
 };
 
-// Asignar neumático a una posición de un vehículo (versión fetch eliminada del modal)
-export const asignarNeumatico = async ({ Placa, Posicion, CodigoNeumatico, Odometro, Remanente, PresionAire, TorqueAplicado, FechaRegistro }) => {
+  // Asignar neumático a una posición de un vehículo (ahora acepta objeto o array)
+export const asignarNeumatico = async (payload) => {
   try {
     const response = await axios.post(
       `${process.env.NEXT_PUBLIC_API_URL}/api/po-asignar-neumatico`,
-      {
-        CodigoNeumatico,
-        Remanente,
-        PresionAire,
-        TorqueAplicado,
-        Placa,
-        Posicion,
-        Odometro,
-        FechaRegistro, // Nuevo campo para la fecha de asignación
-        // UsuarioCrea se toma automáticamente de la sesión del backend
-      },
+      payload, // Puede ser objeto o array
       { withCredentials: true }
     );
     return response.data;

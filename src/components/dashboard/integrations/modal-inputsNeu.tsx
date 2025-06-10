@@ -63,36 +63,6 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                 <Stack spacing={2}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                         <TextField
-                            label="Kilometro"
-                            type="number"
-                            value={Odometro}
-                            onChange={(e) => {
-                                const value = Number(e.target.value);
-                                if (value >= initialOdometro) {
-                                    setOdometro(value);
-                                    setKmError(false);
-                                } else {
-                                    setOdometro(value);
-                                    setKmError(true);
-                                }
-                            }}
-                            fullWidth
-                            error={kmError}
-                            helperText={kmError ? `No puede ser menor a ${initialOdometro.toLocaleString()} km` : `Kilometro: ${initialOdometro.toLocaleString()} km`}
-                            InputProps={{
-                                inputProps: { min: initialOdometro },
-                                sx: {
-                                    'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
-                                        WebkitAppearance: 'none',
-                                        margin: 0,
-                                    },
-                                    'input[type=number]': {
-                                        MozAppearance: 'textfield',
-                                    },
-                                },
-                            }}
-                        />
-                        <TextField
                             label="Remanente"
                             type="number"
                             value={Remanente}
@@ -111,8 +81,6 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                                 },
                             }}
                         />
-                    </Stack>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                         <TextField
                             label="Presión de Aire"
                             type="number"
@@ -142,6 +110,8 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                                 },
                             }}
                         />
+                    </Stack>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                         <TextField
                             label="Torque"
                             type="number"
@@ -171,15 +141,15 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                                 },
                             }}
                         />
+                        <TextField
+                            label="Fecha de Asignación"
+                            type="date"
+                            value={fechaAsignacion}
+                            onChange={e => setFechaAsignacion(e.target.value)}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                        />
                     </Stack>
-                    <TextField
-                        label="Fecha de Asignación"
-                        type="date"
-                        value={fechaAsignacion}
-                        onChange={e => setFechaAsignacion(e.target.value)}
-                        fullWidth
-                        InputLabelProps={{ shrink: true }}
-                    />
                     <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth>
                         Guardar
                     </Button>
