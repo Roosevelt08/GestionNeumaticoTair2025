@@ -397,7 +397,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
 
 
     // ------------------------------------------------
-    // Solo asigna al backend las posiciones que antes estaban vacías
+    // Ahora asigna SIEMPRE los 4 neumáticos asignados (excepto baja/recuperado) con el mismo Odometro
     const handleConfirm = async () => {
         // Nuevo: requiere que las 4 posiciones estén asignadas
         const allPositionsAssigned = Object.values(assignedNeumaticos).filter(Boolean).length === 4;
@@ -408,16 +408,17 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             setSnackbarOpen(true);
             return;
         }
+        // Tomar todos los asignados (excepto baja definitiva o recuperado)
         const toAssign = Object.entries(assignedNeumaticos).filter(
             ([pos, neu]) => {
                 if (!neu) return false;
-                const prev = initialAssignedMap[pos];
-                const prevEsBajaORecuperado = prev && (prev.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || prev.TIPO_MOVIMIENTO === 'RECUPERADO');
-                return prev == null || prevEsBajaORecuperado;
+                // Excluir baja definitiva o recuperado
+                if (neu.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || neu.TIPO_MOVIMIENTO === 'RECUPERADO') return false;
+                return true;
             }
         );
         if (toAssign.length === 0) {
-            setSnackbarMsg('No hay neumáticos nuevos por asignar. El kilometraje no se actualiza aquí.');
+            setSnackbarMsg('No hay neumáticos asignados para actualizar.');
             setSnackbarSeverity('info');
             setSnackbarOpen(true);
             return;
@@ -457,13 +458,13 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                     TorqueAplicado: torqueAplicado,
                     Placa: typeof placa === 'string' ? placa.trim() : placa,
                     Posicion: pos,
-                    Odometro: Odometro,
+                    Odometro: Odometro, // SIEMPRE el mismo para todos
                     FechaRegistro: fechaAsignacion,
                 };
             });
             console.log('Payload enviado a asignarNeumatico:', payloadArray);
             await asignarNeumatico(payloadArray); // axios ya envía Content-Type: application/json
-            setSnackbarMsg('Neumático(s) asignado(s).');
+            setSnackbarMsg('Neumático(s) asignado(s) y kilometraje actualizado.');
             setSnackbarSeverity('success');
             setSnackbarOpen(true);
             if (typeof onAssignedUpdate === 'function') {
