@@ -301,6 +301,9 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
 
     const [assignedNeumaticos, setAssignedNeumaticos] = useState(initialAssignedMap);
 
+    // Debe estar aquí, en el scope principal del componente
+    const allPositionsAssigned = Object.values(assignedNeumaticos).filter(Boolean).length === 4;
+
     // Snackbar personalizado para feedback visual
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMsg, setSnackbarMsg] = useState('');
@@ -396,6 +399,15 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     // ------------------------------------------------
     // Solo asigna al backend las posiciones que antes estaban vacías
     const handleConfirm = async () => {
+        // Nuevo: requiere que las 4 posiciones estén asignadas
+        const allPositionsAssigned = Object.values(assignedNeumaticos).filter(Boolean).length === 4;
+
+        if (!allPositionsAssigned) {
+            setSnackbarMsg('Debes asignar un neumático en las 4 posiciones antes de confirmar.');
+            setSnackbarSeverity('warning');
+            setSnackbarOpen(true);
+            return;
+        }
         const toAssign = Object.entries(assignedNeumaticos).filter(
             ([pos, neu]) => {
                 if (!neu) return false;
@@ -697,7 +709,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     <Button
                                         variant="contained"
                                         color="primary"
-                                        disabled={!hasAssignedNeumaticos}
+                                        disabled={!hasAssignedNeumaticos || !allPositionsAssigned}
                                         onClick={handleConfirm}
                                     >
                                         Confirmar Asignación
