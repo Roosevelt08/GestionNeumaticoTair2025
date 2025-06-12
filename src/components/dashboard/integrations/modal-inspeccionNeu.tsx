@@ -394,6 +394,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       if (isNaN(d.getTime())) return '';
       return d.toISOString().slice(0, 19).replace('T', 'T'); // Mantener formato ISO
     };
+    // Utilidad para obtener fecha/hora local en formato YYYY-MM-DD HH:mm:ss
+    const getLocalDateTimeString = () => {
+      const d = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
     const payloads = inspeccionesPendientes.map(ins => {
       const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
       const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
@@ -412,7 +418,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         FECHA_ASIGNACION: fechaAsignacion || null,
         FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
         FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
-        FECHA_MOVIMIENTO: formatTimestamp(new Date().toISOString()) || null,
+        FECHA_MOVIMIENTO: getLocalDateTimeString(),
         FECHA_REGISTRO: formatDate(ins.fecha_inspeccion) || formatDate(new Date().toISOString()) || null,
         KILOMETRO: ins.kilometro ? parseInt(ins.kilometro) : null,
         MARCA: ins.marca ?? null,
