@@ -521,6 +521,17 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         return porCodigo.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO');
     }, [neumaticosAsignadosState]);
 
+    // Utilidad para obtener fecha/hora local en formato YYYY-MM-DDTHH:mm
+    function getLocalDateTimeString() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
             <Snackbar
@@ -652,10 +663,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                             name="fecha_reubicacion"
                                             size="small"
                                             type="datetime-local"
-                                            value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
+                                            value={formValues.fecha_inspeccion || getLocalDateTimeString()}
                                             onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
                                             InputLabelProps={{ shrink: true }}
-                                            inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                                            inputProps={{ max: getLocalDateTimeString() }}
                                             sx={{ minWidth: 220, mb: 0 }}
                                         />
                                     </Box>
@@ -719,10 +730,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                             name="fecha_desasignacion"
                                             size="small"
                                             type="datetime-local"
-                                            value={formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)}
+                                            value={formValues.fecha_inspeccion || getLocalDateTimeString()}
                                             onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
                                             InputLabelProps={{ shrink: true }}
-                                            inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                                            inputProps={{ max: getLocalDateTimeString() }}
                                             sx={{ minWidth: 220, mb: 0 }}
                                         />
                                     </Box>

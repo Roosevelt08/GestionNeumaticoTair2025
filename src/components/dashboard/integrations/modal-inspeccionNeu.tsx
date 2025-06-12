@@ -117,6 +117,16 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   // Estado para controlar si ya se inspeccionó hoy
   const [inspeccionHoyRealizada, setInspeccionHoyRealizada] = useState(false);
 
+  // Estado para la fecha mínima de inspección (no puede ser menor a la última registrada)
+  const [fechaMinimaInspeccion, setFechaMinimaInspeccion] = useState<string | null>(null);
+  const [fechaInspeccionError, setFechaInspeccionError] = useState<string | null>(null);
+
+  // Estado para la fecha de asignación original (mínimo de inspección)
+  const [fechaAsignacionOriginal, setFechaAsignacionOriginal] = useState<string | null>(null);
+
+  // Obtener la fecha de hoy en formato yyyy-mm-dd
+  const hoy = React.useMemo(() => new Date().toISOString().slice(0, 10), []);
+
   // Cargar datos de neu_asignado al abrir el modal o cuando cambie la placa
   React.useEffect(() => {
     if (open && placa) {
@@ -191,12 +201,30 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         // Buscar el movimiento de ASIGNACION más reciente
         const asignacion = movimientos.find((m: any) => m.TIPO_MOVIMIENTO === 'ASIGNADO' || m.TIPO_MOVIMIENTO === 'ASIGNACION');
         setRemanenteAsignacionReal(asignacion ? Number(asignacion.REMANENTE) : null);
+        // Obtener la última FECHA_REGISTRO (puede ser FECHA_REGISTRO o FECHA_MOVIMIENTO)
+        const fechas = movimientos
+          .map((m: any) => m.FECHA_REGISTRO || m.FECHA_MOVIMIENTO)
+          .filter(Boolean)
+          .map((f: string) => new Date(f));
+        if (fechas.length > 0) {
+          const maxFecha = new Date(Math.max(...fechas.map(f => f.getTime())));
+          setFechaMinimaInspeccion(maxFecha.toISOString().slice(0, 10));
+        } else {
+          setFechaMinimaInspeccion(null);
+        }
       } else {
         remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? '';
         presionUltimoMovimiento = neuFull?.PRESION_AIRE?.toString() ?? '';
         torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? '';
         kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? '';
         setRemanenteAsignacionReal(poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : null);
+        // Si no hay movimientos, usar la fecha de asignación si existe
+        const fechaAsignado = neuFull?.FECHA_ASIGNACION || neuFull?.FECHA_REGISTRO;
+        if (fechaAsignado) {
+          setFechaMinimaInspeccion(new Date(fechaAsignado).toISOString().slice(0, 10));
+        } else {
+          setFechaMinimaInspeccion(null);
+        }
       }
     } catch (e) {
       remanenteUltimoMovimiento = neuFull?.REMANENTE?.toString() ?? '';
@@ -204,6 +232,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       torqueUltimoMovimiento = neuFull?.TORQUE_APLICADO?.toString() ?? '';
       kilometroUltimoMovimiento = neuFull?.KILOMETRO?.toString() ?? '';
       setRemanenteAsignacionReal(poNeu?.REMANENTE !== undefined ? Number(poNeu.REMANENTE) : null);
+      const fechaAsignado = neuFull?.FECHA_ASIGNACION || neuFull?.FECHA_REGISTRO;
+      if (fechaAsignado) {
+        setFechaMinimaInspeccion(new Date(fechaAsignado).toISOString().slice(0, 10));
+      } else {
+        setFechaMinimaInspeccion(null);
+      }
     }
     setRemanenteUltimoMovimiento(remanenteUltimoMovimiento ? Number(remanenteUltimoMovimiento) : null);
     setFormValues({
@@ -293,6 +327,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       setSnackbar({ open: true, message: 'Debe seleccionar un neumático.', severity: 'error' });
       return;
     }
+    if (fechaMinimaInspeccion && (formValues.fecha_inspeccion < fechaMinimaInspeccion)) {
+      setSnackbar({ open: true, message: `La fecha de inspección no puede ser menor a la última registrada: ${fechaMinimaInspeccion}`, severity: 'error' });
+      return;
+    }
     if (!hayCambiosFormulario) {
       setSnackbar({ open: true, message: 'No hay cambios para guardar.', severity: 'info' });
       return;
@@ -306,8 +344,17 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${valorReferenciaRemanente}` , severity: 'error' });
       return;
     }
-    // Guardar/actualizar inspección localmente por posición
-    const nuevaInspeccion = { ...formValues };
+    // Buscar la fecha de asignación original para este neumático
+    let fechaAsignacion = null;
+    if (neumaticoSeleccionado?.FECHA_ASIGNACION) {
+      fechaAsignacion = neumaticoSeleccionado.FECHA_ASIGNACION;
+    } else if (neumaticoSeleccionado?.MOVIMIENTOS && Array.isArray(neumaticoSeleccionado.MOVIMIENTOS)) {
+      const movAsign = neumaticoSeleccionado.MOVIMIENTOS.filter((m: any) => m.TIPO_MOVIMIENTO === 'ASIGNADO' || m.TIPO_MOVIMIENTO === 'ASIGNACION')
+        .sort((a: any, b: any) => new Date(b.FECHA_MOVIMIENTO).getTime() - new Date(a.FECHA_MOVIMIENTO).getTime())[0];
+      fechaAsignacion = movAsign?.FECHA_ASIGNACION || movAsign?.FECHA_REGISTRO || null;
+    }
+    // Guardar/actualizar inspección localmente por posición, incluyendo la fecha de asignación
+    const nuevaInspeccion = { ...formValues, fecha_asignacion: fechaAsignacion ? new Date(fechaAsignacion).toISOString().slice(0, 10) : null };
     setInspeccionesPendientes(prev => {
       const idx = prev.findIndex(i => i.posicion === nuevaInspeccion.posicion);
       let nuevoArray;
@@ -349,10 +396,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     };
     const payloads = inspeccionesPendientes.map(ins => {
       const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
-      // Calcular el estado (porcentaje) directamente usando remanente y referencia
       const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
       const referencia = poNeu?.REMANENTE ? parseFloat(poNeu.REMANENTE) : 0;
       const estadoDecimal = referencia > 0 ? Math.round((remanente * 100) / referencia) : null;
+      // Usar la fecha de asignación guardada en la inspección, o la de poNeu si no existe
+      let fechaAsignacion = ins.fecha_asignacion;
+      if (!fechaAsignacion && poNeu?.FECHA_ASIGNACION) fechaAsignacion = poNeu.FECHA_ASIGNACION;
       // Construir el objeto en el orden exacto esperado por el backend, usando null en vez de string vacío
       const obj = {
         CARGA: poNeu?.CARGA ?? null,
@@ -360,7 +409,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         COSTO: poNeu?.COSTO ? parseFloat(poNeu.COSTO) : null,
         DISEÑO: ins.diseño ?? null,
         ESTADO: estadoDecimal,
-        FECHA_ASIGNACION: formatDate(new Date().toISOString()) || null,
+        FECHA_ASIGNACION: fechaAsignacion || null,
         FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
         FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
         FECHA_MOVIMIENTO: formatTimestamp(new Date().toISOString()) || null,
@@ -586,18 +635,33 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                   <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
                   <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField
-                    label="Fecha y hora de inspección"
+                    label="Fecha de inspección"
                     name="fecha_inspeccion"
                     size="small"
-                    type="datetime-local"
+                    type="date"
                     value={
-                      formValues.fecha_inspeccion || new Date().toISOString().slice(0, 16)
+                      formValues.fecha_inspeccion || hoy
                     }
-                    onChange={e => setFormValues(prev => ({ ...prev, fecha_inspeccion: e.target.value }))}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setFormValues(prev => ({ ...prev, fecha_inspeccion: value }));
+                      if (fechaAsignacionOriginal && value < fechaAsignacionOriginal) {
+                        setFechaInspeccionError(`No puede ser menor a la fecha de asignación: ${fechaAsignacionOriginal}`);
+                      } else if (value > hoy) {
+                        setFechaInspeccionError(`No puede ser mayor a la fecha de hoy: ${hoy}`);
+                      } else {
+                        setFechaInspeccionError(null);
+                      }
+                    }}
                     InputLabelProps={{ shrink: true }}
-                    inputProps={{ max: new Date().toISOString().slice(0, 16) }}
+                    inputProps={{
+                      min: fechaAsignacionOriginal || undefined,
+                      max: hoy
+                    }}
                     sx={{ gridColumn: 'span 2' }}
                     disabled={bloquearFormulario}
+                    error={!!fechaInspeccionError}
+                    helperText={fechaInspeccionError || (fechaAsignacionOriginal ? `Solo fechas entre ${fechaAsignacionOriginal} y ${hoy}` : undefined)}
                   />
 
                 </Box>
