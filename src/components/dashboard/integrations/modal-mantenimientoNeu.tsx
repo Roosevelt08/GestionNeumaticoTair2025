@@ -391,7 +391,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     DESTINO: vehiculo?.proyecto || '',
                     FECHA_ASIGNACION: new Date().toISOString(),
                     KILOMETRO: fullNeu.KILOMETRO,
-                    FECHA_MOVIMIENTO: new Date().toISOString(),
+                    FECHA_MOVIMIENTO: getLocalDateTimeStringForPayload(),
                     OBSERVACION: formValues.observacion,
                 });
             }
@@ -484,7 +484,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             DESTINO: vehiculo?.proyecto || '',
             FECHA_ASIGNACION: formValues.fecha_inspeccion || new Date().toISOString().slice(0, 10),
             KILOMETRO: neumaticoSeleccionado.KILOMETRO,
-            FECHA_MOVIMIENTO: formValues.fecha_inspeccion ? new Date(formValues.fecha_inspeccion).toISOString().replace('T', ' ').substring(0, 19) : new Date().toISOString().replace('T', ' ').substring(0, 19),
+            FECHA_MOVIMIENTO: formValues.fecha_inspeccion ? getLocalDateTimeStringForPayload() : getLocalDateTimeStringForPayload(),
             OBSERVACION: formValues.observacion,
         };
         // LOG para depuración: ver el payload antes de enviarlo
@@ -530,6 +530,22 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
+    // Utilidad para obtener fecha/hora local en formato YYYY-MM-DD HH:mm:ss
+    function getLocalDateTimeStringForPayload() {
+        const d = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    // Utilidad para obtener fecha local en formato YYYY-MM-DD
+    function getLocalDateString() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
     return (
@@ -659,14 +675,14 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                         </Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
-                                            label="Fecha y hora"
+                                            label="Fecha"
                                             name="fecha_reubicacion"
                                             size="small"
-                                            type="datetime-local"
-                                            value={formValues.fecha_inspeccion || getLocalDateTimeString()}
+                                            type="date"
+                                            value={formValues.fecha_inspeccion?.slice(0, 10) || getLocalDateTimeString().slice(0, 10)}
                                             onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
                                             InputLabelProps={{ shrink: true }}
-                                            inputProps={{ max: getLocalDateTimeString() }}
+                                            inputProps={{ max: getLocalDateTimeString().slice(0, 10) }}
                                             sx={{ minWidth: 220, mb: 0 }}
                                         />
                                     </Box>
@@ -726,14 +742,14 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                         </Typography>
                                         <Box sx={{ flex: 1 }} />
                                         <TextField
-                                            label="Fecha y hora"
+                                            label="Fecha"
                                             name="fecha_desasignacion"
                                             size="small"
-                                            type="datetime-local"
-                                            value={formValues.fecha_inspeccion || getLocalDateTimeString()}
+                                            type="date"
+                                            value={formValues.fecha_inspeccion?.slice(0, 10) || getLocalDateString()}
                                             onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
                                             InputLabelProps={{ shrink: true }}
-                                            inputProps={{ max: getLocalDateTimeString() }}
+                                            inputProps={{ max: getLocalDateString() }}
                                             sx={{ minWidth: 220, mb: 0 }}
                                         />
                                     </Box>
@@ -978,7 +994,7 @@ function normalizePayload(mov: any) {
         DESTINO: mov.DESTINO || '',
         FECHA_ASIGNACION: mov.FECHA_ASIGNACION ? new Date(mov.FECHA_ASIGNACION).toISOString() : new Date().toISOString(),
         KILOMETRO: mov.KILOMETRO || '',
-        FECHA_MOVIMIENTO: mov.FECHA_MOVIMIENTO ? new Date(mov.FECHA_MOVIMIENTO).toISOString() : new Date().toISOString(),
+        FECHA_MOVIMIENTO: mov.FECHA_MOVIMIENTO || '',
         OBSERVACION: mov.OBSERVACION || mov.OBS || mov.observacion || '',
     };
 }
