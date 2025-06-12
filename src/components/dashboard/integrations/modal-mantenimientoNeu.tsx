@@ -363,6 +363,17 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     PLACA: placa,
                 });
                 let posicionNeuOriginal = posAnterior;
+                // Obtener la fecha de asignación original desde initialAssignedMap usando el código del neumático
+                const codigoNeu = fullNeu.CODIGO_NEU || fullNeu.CODIGO;
+                let fechaAsignacionOriginal = '';
+                // Buscar en el mapa inicial por código
+                for (const key of Object.keys(initialAssignedMap)) {
+                    const n = initialAssignedMap[key];
+                    if (n && (n.CODIGO_NEU || n.CODIGO) === codigoNeu) {
+                        fechaAsignacionOriginal = n.FECHA_ASIGNACION || n.FECHA_REGISTRO || '';
+                        break;
+                    }
+                }
                 movimientos.push({
                     CODIGO: fullNeu.CODIGO_NEU || fullNeu.CODIGO,
                     MARCA: fullNeu.MARCA,
@@ -389,7 +400,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     POSICION_INICIAL: posicionNeuOriginal,
                     POSICION_FIN: pos,
                     DESTINO: vehiculo?.proyecto || '',
-                    FECHA_ASIGNACION: new Date().toISOString(),
+                    FECHA_ASIGNACION: fechaAsignacionOriginal,
                     KILOMETRO: fullNeu.KILOMETRO,
                     FECHA_MOVIMIENTO: getLocalDateTimeStringForPayload(),
                     OBSERVACION: formValues.observacion,
@@ -992,7 +1003,7 @@ function normalizePayload(mov: any) {
         POSICION_INICIAL: mov.POSICION_INICIAL || '',
         POSICION_FIN: mov.POSICION_FIN || '',
         DESTINO: mov.DESTINO || '',
-        FECHA_ASIGNACION: mov.FECHA_ASIGNACION ? new Date(mov.FECHA_ASIGNACION).toISOString() : new Date().toISOString(),
+        FECHA_ASIGNACION: mov.FECHA_ASIGNACION || '',
         KILOMETRO: mov.KILOMETRO || '',
         FECHA_MOVIMIENTO: mov.FECHA_MOVIMIENTO || '',
         OBSERVACION: mov.OBSERVACION || mov.OBS || mov.observacion || '',
