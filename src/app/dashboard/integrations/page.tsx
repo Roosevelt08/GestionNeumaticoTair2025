@@ -409,6 +409,15 @@ export default function Page(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ultimoKilometroReal]);
 
+  // Escuchar evento global para abrir el modal de inspección desde cualquier parte
+  React.useEffect(() => {
+    const handler = () => {
+      setOpenInspeccionModal(true);
+    };
+    window.addEventListener('abrir-modal-inspeccion-interno', handler);
+    return () => window.removeEventListener('abrir-modal-inspeccion-interno', handler);
+  }, []);
+
   return (
     <Stack spacing={3}>
       {/* <Stack direction="row" spacing={3}>

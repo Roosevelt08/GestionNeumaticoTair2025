@@ -396,9 +396,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     TORQUE_APLICADO: fullNeu.TORQUE_APLICADO,
                     ESTADO: fullNeu.ESTADO,
                     PLACA: placa,
-                    POSICION_NEU: posicionNeuOriginal,
+                    POSICION_NEU: posicionNeuOriginal, // POSICION_NEU = POSICION_INICIAL
                     POSICION_INICIAL: posicionNeuOriginal,
-                    POSICION_FIN: pos,
+                    POSICION_FIN: pos, // POSICION_FIN = nueva posición
                     DESTINO: vehiculo?.proyecto || '',
                     FECHA_ASIGNACION: fechaAsignacionOriginal,
                     KILOMETRO: fullNeu.KILOMETRO,
@@ -848,6 +848,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                     onRotarClick={() => setAccion('REUBICADO')}
                                     onDesasignarClick={() => setAccion('DESASIGNAR')}
                                     fromMantenimientoModal={true}
+                                    placa={placa}
                                 />
                                 <img
                                     src="/assets/placa.png"

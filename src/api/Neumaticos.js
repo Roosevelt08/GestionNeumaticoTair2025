@@ -190,3 +190,19 @@ export const registrarDesasignacionNeumatico = async (data) => {
   }
 };
 
+// Consultar si existe inspección para hoy para un neumático y placa
+export const consultarInspeccionHoy = async ({ codigo, placa, fecha }) => {
+  try {
+    const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/inspeccion/existe`, {
+      params: { codigo, placa, fecha },
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data && error.response.data.error) {
+      throw new Error(error.response.data.error);
+    }
+    throw error;
+  }
+};
+

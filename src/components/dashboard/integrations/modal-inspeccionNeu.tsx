@@ -480,6 +480,24 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     }
   }, [open, placa]);
 
+  // Escuchar el evento global para abrir el modal desde DiagramaVehiculo
+  React.useEffect(() => {
+    const handler = () => {
+      if (!open) {
+        // Si el modal no está abierto, lo abre
+        if (typeof onClose === 'function') onClose(); // Cierra si está abierto (por seguridad)
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            const evt = new CustomEvent('abrir-modal-inspeccion-interno');
+            window.dispatchEvent(evt);
+          }
+        }, 100);
+      }
+    };
+    window.addEventListener('abrir-modal-inspeccion', handler);
+    return () => window.removeEventListener('abrir-modal-inspeccion', handler);
+  }, [open, onClose]);
+
   return (
     <>
       <Dialog open={alertaInspeccionHoy} onClose={() => setAlertaInspeccionHoy(false)}>

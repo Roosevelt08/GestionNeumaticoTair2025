@@ -1,6 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { consultarInspeccionHoy } from '../../../api/Neumaticos';
 
 interface Neumatico {
     POSICION: string;
@@ -38,7 +39,8 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
     onRotarClick?: () => void;
     onDesasignarClick?: () => void;
     fromMantenimientoModal?: boolean;
-}> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, ...props }) => {
+    placa?: string; // <-- Asegúrate de pasar la placa desde el padre
+}> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, placa, ...props }) => {
     const pos = posiciones[layout];
     const neumaticosFiltrados = React.useMemo(() => {
         // 1. Filtrar por posición: el movimiento más reciente por posición
@@ -63,6 +65,44 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
         }
         return Array.from(porCodigo.values());
     }, [neumaticosAsignados]);
+    // Handler para click en rotar con validación de inspección
+    const handleRotarClick = async () => {
+        // Tomar el primer neumático asignado (puedes ajustar la lógica si es por posición específica)
+        const neu = neumaticosFiltrados[0];
+        if (!neu || !placa) {
+            alert('No se puede validar inspección: falta neumático o placa');
+            return;
+        }
+        const codigo = neu.CODIGO_NEU || neu.CODIGO;
+        const hoy = new Date();
+        const yyyy = hoy.getFullYear();
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        const fechaHoy = `${yyyy}-${mm}-${dd}`;
+        try {
+            const resp = await consultarInspeccionHoy({ codigo, placa, fecha: fechaHoy });
+            if (resp.existe) {
+                if (onRotarClick) onRotarClick();
+            } else {
+                let msg = 'Realiza una inspección, ya que la última inspección fue ';
+                msg += resp.ultima ? resp.ultima : 'NUNCA';
+                // alert(msg);
+                if (window && typeof window !== 'undefined') {
+                    alert(msg);
+                }
+                // Si tienes una función para abrir el modal de inspección, llámala aquí
+                if (typeof window !== 'undefined' && window.dispatchEvent) {
+                    window.dispatchEvent(new CustomEvent('abrir-modal-inspeccion'));
+                }
+            }
+        } catch (e) {
+            if (e instanceof Error) {
+                alert('Error al consultar inspección: ' + e.message);
+            } else {
+                alert('Error al consultar inspección: ' + String(e));
+            }
+        }
+    };
     return (
         <Box
             sx={
@@ -99,7 +139,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
             {/* Acciones rápidas solo en modal de mantenimiento */}
             {layout === 'modal' && fromMantenimientoModal && (
                 <>
-                    <img src="/assets/rotar.png" alt="Reubicar" title="Reubicar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onRotarClick} />
+                    <img src="/assets/rotar.png" alt="Reubicar" title="Reubicar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={handleRotarClick} />
                     <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onDesasignarClick} />
                 </>
             )}
