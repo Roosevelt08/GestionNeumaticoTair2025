@@ -169,6 +169,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     }
   }, [open, placa]);
 
+  // 1. Agrega un estado fijo para el kilometraje mínimo permitido
+  const [minKilometro, setMinKilometro] = useState(0);
+
   // Cuando se selecciona un neumático, llenar el formulario con datos completos de neu_asignado
   const handleSeleccionarNeumatico = async (neumatico: any) => {
     console.log('neumatico clickeado:', neumatico);
@@ -257,6 +260,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       fecha_inspeccion: '',
     });
     setOdometro(Number(kilometroUltimoMovimiento || neuFull?.ODOMETRO || neuFull?.KILOMETRO || 0));
+    setMinKilometro(Number(kilometroUltimoMovimiento || neuFull?.ODOMETRO || neuFull?.KILOMETRO || 0));
     setKmError(false);
     setRemanenteError(false);
     // Buscar el remanente de la última ASIGNACIÓN (puede seguir igual)
@@ -286,6 +290,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   React.useEffect(() => {
     if (open && vehiculo?.kilometro !== undefined) {
       setFormValues((prev) => ({ ...prev, kilometro: vehiculo.kilometro?.toString() ?? '' }));
+      setMinKilometro(vehiculo.kilometro);
     }
   }, [open, vehiculo?.kilometro]);
 
@@ -323,6 +328,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   // Guardar inspección localmente (no envía al backend)
   const handleGuardarInspeccionLocal = () => {
+    if (kmError) {
+      setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
+      return;
+    }
     if (!neumaticoSeleccionado) {
       setSnackbar({ open: true, message: 'Debe seleccionar un neumático.', severity: 'error' });
       return;
@@ -374,6 +383,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   // Enviar todas las inspecciones pendientes al backend
   const handleEnviarYGuardar = async () => {
+    if (kmError) {
+      setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
+      return;
+    }
     if (inspeccionesPendientes.length !== 4) {
       setSnackbar({ open: true, message: 'Debe inspeccionar los 4 neumáticos antes de enviar.', severity: 'error' });
       return;
@@ -591,23 +604,20 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                   <TextField
                     label="Kilometro"
                     type="number"
-                    name="kilometro"
-                    size="small"
                     value={Odometro}
-                    onChange={e => {
+                    onChange={(e) => {
                       const value = Number(e.target.value);
                       setOdometro(value);
-                      setFormValues(prev => ({ ...prev, kilometro: value.toString() }));
-                      setKmError(value < initialOdometro);
+                      if (value >= minKilometro) {
+                        setKmError(false);
+                      } else {
+                        setKmError(true);
+                      }
                     }}
+                    fullWidth
                     error={kmError}
-                    helperText={
-                      kmError
-                        ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
-                        : `Kilometro: ${initialOdometro.toLocaleString()} km`
-                    }
                     InputProps={{
-                      inputProps: { min: initialOdometro },
+                      inputProps: { min: minKilometro },
                       sx: {
                         'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
                           WebkitAppearance: 'none',
@@ -618,9 +628,38 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                         },
                       },
                     }}
-                    fullWidth
-                    disabled={bloquearFormulario}
+                    sx={{ maxWidth: 180, ml: 2 }}
                   />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: 'text.secondary',
+                      minWidth: 180,
+                      mt: 0.5,
+                      ml: 2,
+                      whiteSpace: 'nowrap',
+                      fontWeight: 'normal',
+                      display: 'block',
+                    }}
+                  >
+                    {`Kilometro actual: ${minKilometro.toLocaleString()} km`}
+                  </Typography>
+                  {kmError && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: 'error.main',
+                        minWidth: 180,
+                        mt: 0.5,
+                        ml: 2,
+                        whiteSpace: 'nowrap',
+                        fontWeight: 'bold',
+                        display: 'block',
+                      }}
+                    >
+                      {`No puede ser menor a ${minKilometro.toLocaleString()} km`}
+                    </Typography>
+                  )}
                   <TextField
                     label="Remanente"
                     name="remanente"
@@ -746,10 +785,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={!hayCambiosFormulario || bloquearFormulario}>
+          <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={!hayCambiosFormulario || bloquearFormulario || kmError}>
             Guardar inspección
           </Button>
-          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4 || bloquearFormulario}>
+          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4 || bloquearFormulario || kmError}>
             Enviar y Guardar
           </Button>
         </DialogActions>

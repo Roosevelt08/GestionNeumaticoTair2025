@@ -268,6 +268,7 @@ const DropZone: React.FC<DropZoneProps> = ({
                 initialOdometro={typeof kilometro === 'number' ? kilometro : 0}
                 initialPresionAire={assignedNeumaticos[position]?.PRESION_AIRE ? Number(assignedNeumaticos[position]?.PRESION_AIRE) : 0}
                 initialTorqueAplicado={assignedNeumaticos[position]?.TORQUE_APLICADO ? Number(assignedNeumaticos[position]?.TORQUE_APLICADO) : 0}
+                fechaRegistroNeumatico={assignedNeumaticos[position]?.FECHA_REGISTRO || ''}
             />
         </div>
     );
@@ -342,7 +343,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     }, [assignedNeumaticos]);
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(3);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -458,7 +459,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                     TorqueAplicado: torqueAplicado,
                     Placa: typeof placa === 'string' ? placa.trim() : placa,
                     Posicion: pos,
-                    Odometro: Odometro, // SIEMPRE el mismo para todos
+                    Odometro: Number(Odometro), // convertir a número
                     FechaRegistro: fechaAsignacion,
                 };
             });
@@ -482,13 +483,13 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
 
 
     // Definir estados para Odometro, initialOdometro y kmError
-    const [Odometro, setOdometro] = useState<number>(kilometro || 0);
+    const [Odometro, setOdometro] = useState<string>(''); // ahora string vacío
     const [initialOdometro, setInitialOdometro] = useState<number>(kilometro || 0);
     const [kmError, setKmError] = useState<boolean>(false);
 
     // Sincronizar Odometro e initialOdometro cuando cambie la prop kilometro o al abrir el modal
     useEffect(() => {
-        setOdometro(kilometro || 0);
+        setOdometro(''); // SIEMPRE vacío al abrir
         setInitialOdometro(kilometro || 0);
         setKmError(false);
     }, [kilometro, open]);
@@ -667,17 +668,19 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                             type="number"
                                             value={Odometro}
                                             onChange={(e) => {
-                                                const value = Number(e.target.value);
-                                                if (value >= initialOdometro) {
-                                                    setOdometro(value);
+                                                const value = e.target.value;
+                                                setOdometro(value);
+                                                const numValue = Number(value);
+                                                if (value === '' || isNaN(numValue)) {
+                                                    setKmError(true);
+                                                } else if (numValue >= initialOdometro) {
                                                     setKmError(false);
                                                 } else {
-                                                    setOdometro(value);
                                                     setKmError(true);
                                                 }
                                             }}
                                             fullWidth
-                                            error={kmError}
+                                            error={kmError || Odometro === ''}
                                             InputProps={{
                                                 inputProps: { min: initialOdometro },
                                                 sx: {
@@ -695,22 +698,24 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         <Typography
                                             variant="body2"
                                             sx={{
-                                                color: kmError ? 'error.main' : 'text.secondary',
+                                                color: kmError || Odometro === '' ? 'error.main' : 'text.secondary',
                                                 minWidth: 180,
                                                 ml: 1,
                                                 whiteSpace: 'nowrap',
-                                                fontWeight: kmError ? 'bold' : 'normal',
+                                                fontWeight: kmError || Odometro === '' ? 'bold' : 'normal',
                                             }}
                                         >
-                                            {kmError
-                                                ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
-                                                : `Kilometro actual: ${Odometro.toLocaleString()} km`}
+                                            {Odometro === ''
+                                                ? `Ingrese el km actual (último ${initialOdometro.toLocaleString()} km)`
+                                                : kmError
+                                                    ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
+                                                    : `Kilometro actual: ${Number(Odometro).toLocaleString()} km`}
                                         </Typography>
                                     </Box>
                                     <Button
                                         variant="contained"
                                         color="primary"
-                                        disabled={!hasAssignedNeumaticos || !allPositionsAssigned}
+                                        disabled={!hasAssignedNeumaticos || !allPositionsAssigned || kmError || Odometro === '' || isNaN(Number(Odometro))}
                                         onClick={handleConfirm}
                                     >
                                         Confirmar Asignación
@@ -878,7 +883,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     </Table>
                                 </TableContainer>
                                 <TablePagination
-                                    rowsPerPageOptions={[3, 5, 10]}
+                                    rowsPerPageOptions={[5, 10, 15]}
                                     component="div"
                                     count={filteredData.length}
                                     rowsPerPage={rowsPerPage}

@@ -108,6 +108,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
     const [snackbarMsg, setSnackbarMsg] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState<'success'|'error'|'info'|'warning'>('success');
 
+    // Estado para la fecha de la última inspección
+    const [fechaUltimaInspeccion, setFechaUltimaInspeccion] = useState<string>('');
+
     // Actualizar el estado local y el mapa inicial si cambian los props
     React.useEffect(() => {
         setNeumaticosAsignadosState(neumaticosAsignados);
@@ -119,7 +122,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         setInitialAssignedMap(map);
     }, [neumaticosAsignados]);
 
-    // Cuando se selecciona un neumático, llenar el formulario
+    // Cuando se selecciona un neumático, obtener la última inspección y setear la fecha
     const handleSeleccionarNeumatico = async (neumatico: any) => {
         setNeumaticoSeleccionado(neumatico);
         // Si selecciono un neumático diferente, limpiar la posición original
@@ -153,10 +156,13 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     presion_aire = m.PRESION_AIRE?.toString() || '';
                     torque_aplicado = m.TORQUE_APLICADO?.toString() || '';
                     estado = m.ESTADO || '';
+                    // Guardar la fecha de la última inspección
+                    if (m.FECHA_REGISTRO) setFechaUltimaInspeccion(m.FECHA_REGISTRO);
                 }
             }
         } catch (e) {
-            // Si hay error, usar el kilometro del vehículo
+            // Si hay error, limpiar la fecha
+            setFechaUltimaInspeccion('');
         }
         setFormValues({
             kilometro: ultimoKilometro,
@@ -389,7 +395,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     PROYECTO: vehiculo?.proyecto || '',
                     COSTO: fullNeu.COSTO,
                     PROVEEDOR: fullNeu.PROVEEDOR,
-                    FECHA_REGISTRO: formValues.fecha_inspeccion || new Date().toISOString(),
+                    FECHA_REGISTRO: fechaUltimaInspeccion || new Date().toISOString(),
                     FECHA_COMPRA: fullNeu.FECHA_COMPRA,
                     USUARIO_SUPER: user?.usuario || user?.email || user?.nombre || '',
                     PRESION_AIRE: fullNeu.PRESION_AIRE,
@@ -402,7 +408,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     DESTINO: vehiculo?.proyecto || '',
                     FECHA_ASIGNACION: fechaAsignacionOriginal,
                     KILOMETRO: fullNeu.KILOMETRO,
-                    FECHA_MOVIMIENTO: getLocalDateTimeStringForPayload(),
+                    FECHA_MOVIMIENTO: fechaUltimaInspeccion || new Date().toISOString(),
                     OBSERVACION: formValues.observacion,
                 });
             }
@@ -413,7 +419,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             setSnackbarOpen(true);
             return;
         }
-        // Normalizar el array antes de enviar
+        // Normalizar el array antes de enviarlo
         const normalizedPayloadArray = movimientos.map(normalizePayload);
         // LOG para depuración: ver el payload antes de enviarlo
         console.log('Payload que se enviará al backend (reubicación):', normalizedPayloadArray);
@@ -483,7 +489,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             PROYECTO: vehiculo?.proyecto || '',
             COSTO: neumaticoSeleccionado.COSTO,
             PROVEEDOR: neumaticoSeleccionado.PROVEEDOR,
-            FECHA_REGISTRO: formValues.fecha_inspeccion || new Date().toISOString().slice(0, 10),
+            FECHA_REGISTRO: fechaUltimaInspeccion || new Date().toISOString().slice(0, 10),
             FECHA_COMPRA: neumaticoSeleccionado.FECHA_COMPRA,
             USUARIO_SUPER: user?.usuario || user?.email || user?.nombre || '',
             TIPO_MOVIMIENTO: formValues.accion, // <-- Usar formValues.accion
@@ -493,9 +499,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             PLACA: placa,
             POSICION_NEU: posicionParaPayload,
             DESTINO: vehiculo?.proyecto || '',
-            FECHA_ASIGNACION: formValues.fecha_inspeccion || new Date().toISOString().slice(0, 10),
+            FECHA_ASIGNACION: fechaUltimaInspeccion || new Date().toISOString().slice(0, 10),
             KILOMETRO: neumaticoSeleccionado.KILOMETRO,
-            FECHA_MOVIMIENTO: formValues.fecha_inspeccion ? getLocalDateTimeStringForPayload() : getLocalDateTimeStringForPayload(),
+            FECHA_MOVIMIENTO: fechaUltimaInspeccion || new Date().toISOString(),
             OBSERVACION: formValues.observacion,
         };
         // LOG para depuración: ver el payload antes de enviarlo
@@ -685,17 +691,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                             REUBICAR
                                         </Typography>
                                         <Box sx={{ flex: 1 }} />
-                                        <TextField
-                                            label="Fecha"
-                                            name="fecha_reubicacion"
-                                            size="small"
-                                            type="date"
-                                            value={formValues.fecha_inspeccion?.slice(0, 10) || getLocalDateTimeString().slice(0, 10)}
-                                            onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
-                                            InputLabelProps={{ shrink: true }}
-                                            inputProps={{ max: getLocalDateTimeString().slice(0, 10) }}
-                                            sx={{ minWidth: 220, mb: 0 }}
-                                        />
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Fecha última inspección</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                {fechaUltimaInspeccion || 'Sin registro'}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
                                         <TextField
@@ -752,17 +753,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                             DESASIGNAR
                                         </Typography>
                                         <Box sx={{ flex: 1 }} />
-                                        <TextField
-                                            label="Fecha"
-                                            name="fecha_desasignacion"
-                                            size="small"
-                                            type="date"
-                                            value={formValues.fecha_inspeccion?.slice(0, 10) || getLocalDateString()}
-                                            onChange={(e) => setFormValues((prev) => ({ ...prev, fecha_inspeccion: e.target.value }))}
-                                            InputLabelProps={{ shrink: true }}
-                                            inputProps={{ max: getLocalDateString() }}
-                                            sx={{ minWidth: 220, mb: 0 }}
-                                        />
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Fecha última inspección</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                                                {fechaUltimaInspeccion || 'Sin registro'}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 2 }}>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 220, flex: 1 }}>
@@ -940,7 +936,7 @@ const NeumaticoInfo: React.FC<{ neumatico: Neumatico }> = ({ neumatico }) => (
     </>
 );
 
-// Drop target para el card de Neumáticos por Rotar
+// Drop target para el card de Neumaticos por Rotar
 export const DropNeumaticosPorRotar: React.FC<{
     onDropNeumatico: (neumatico: Neumatico) => void;
     children: React.ReactNode;

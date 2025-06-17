@@ -368,6 +368,48 @@ export default function Page(): React.JSX.Element {
     return Array.from(porCodigo.values());
   }, [neumaticosAsignados]);
 
+  // Estado para cachear la última fecha de registro por código
+  const [fechasRegistro, setFechasRegistro] = useState<{ [codigo: string]: string }>({});
+  const [fechasCargando, setFechasCargando] = useState<{ [codigo: string]: boolean }>({});
+
+  // Nueva función asíncrona para obtener la última FECHA_REGISTRO máxima desde el backend
+  const getUltimaFechaRegistro = (codigo: string) => {
+    if (fechasRegistro[codigo]) {
+      return fechasRegistro[codigo];
+    }
+    if (fechasCargando[codigo]) {
+      return 'Cargando...';
+    }
+    setFechasCargando(prev => ({ ...prev, [codigo]: true }));
+    obtenerUltimosMovimientosPorCodigo(codigo)
+      .then((movimientos) => {
+        let fecha = '';
+        if (Array.isArray(movimientos) && movimientos.length > 0) {
+          // Buscar la FECHA_REGISTRO máxima entre todos los movimientos
+          console.log('Movimientos para', codigo, movimientos.map(m => m.FECHA_REGISTRO));
+          const maxFecha = movimientos.reduce((max: string, curr: any) => {
+            if (!curr.FECHA_REGISTRO) return max;
+            if (!max) return curr.FECHA_REGISTRO;
+            return curr.FECHA_REGISTRO > max ? curr.FECHA_REGISTRO : max;
+          }, '');
+          console.log('FECHA_REGISTRO máxima para', codigo, ':', maxFecha);
+          if (maxFecha) {
+            // Mostrar la fecha como string local (sin desfase de zona horaria)
+            const [year, month, day] = maxFecha.split('-');
+            fecha = `${day}/${month}/${year}`;
+          }
+        }
+        setFechasRegistro(prev => ({ ...prev, [codigo]: fecha }));
+      })
+      .catch(() => {
+        setFechasRegistro(prev => ({ ...prev, [codigo]: '' }));
+      })
+      .finally(() => {
+        setFechasCargando(prev => ({ ...prev, [codigo]: false }));
+      });
+    return 'Cargando...';
+  };
+
   // Memo para filtrar por el último movimiento por código usando FECHA_MOVIMIENTO
   const neumaticosAsignadosUnicos = React.useMemo(() => {
     // Agrupar por código y quedarse con el de FECHA_MOVIMIENTO más reciente
@@ -417,6 +459,8 @@ export default function Page(): React.JSX.Element {
     window.addEventListener('abrir-modal-inspeccion-interno', handler);
     return () => window.removeEventListener('abrir-modal-inspeccion-interno', handler);
   }, []);
+
+ 
 
   return (
     <Stack spacing={3}>
@@ -603,6 +647,7 @@ export default function Page(): React.JSX.Element {
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Marca</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Medida</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Remanente</TableCell>
+                  <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Fecha Ultimo Registro</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Fecha Movimiento</TableCell>
                   <TableCell sx={{ backgroundColor: '#e0f7fa', fontWeight: 'bold' }}>Estado</TableCell>
                 </TableRow>
@@ -616,6 +661,7 @@ export default function Page(): React.JSX.Element {
                       <TableCell align="center">{neumatico.MARCA}</TableCell>
                       <TableCell align="center">{neumatico.MEDIDA}</TableCell>
                       <TableCell align="center">{neumatico.REMANENTE ?? 0}</TableCell>
+                      <TableCell align='center'>{getUltimaFechaRegistro(neumatico.CODIGO)}</TableCell>
                       <TableCell align="center">{
                         neumatico.FECHA_MOVIMIENTO
                           ? new Date(neumatico.FECHA_MOVIMIENTO).toLocaleString('es-PE', {

@@ -11,9 +11,10 @@ interface ModalInputsNeuProps {
     initialOdometro?: number;
     initialPresionAire?: number;
     initialTorqueAplicado?: number;
+    fechaRegistroNeumatico: string; // Nueva prop: fecha de registro del neumático (YYYY-MM-DD)
 }
 
-const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit, initialRemanente = 0, initialOdometro = 0, initialPresionAire = 0, initialTorqueAplicado = 0 }) => {
+const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit, initialRemanente = 0, initialOdometro = 0, initialPresionAire = 0, initialTorqueAplicado = 0, fechaRegistroNeumatico }) => {
     const [Odometro, setOdometro] = React.useState<number>(initialOdometro);
     const [Remanente, setRemanente] = React.useState<number>(initialRemanente);
     const [PresionAire, setPresionAire] = React.useState<number>(initialPresionAire);
@@ -22,6 +23,8 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
     const [presionError, setPresionError] = React.useState(false);
     const [torqueError, setTorqueError] = React.useState(false);
     const [fechaAsignacion, setFechaAsignacion] = React.useState<string>('');
+    const [fechaError, setFechaError] = React.useState(false); // Error para la fecha de asignación
+    const [fechaFormatoError, setFechaFormatoError] = React.useState(false); // Error para el formato de la fecha
 
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -36,8 +39,18 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
             setPresionError(false);
             setTorqueError(false);
             setFechaAsignacion('');
+            setFechaError(false);
         }
     }, [open, initialRemanente, initialOdometro, initialPresionAire, initialTorqueAplicado]);
+
+    const validarFormatoFecha = (fecha: string) => {
+        // Espera formato YYYY-MM-DD
+        if (!fecha) return false;
+        const match = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) return false;
+        const [_, year, month, day] = match;
+        return year.length === 4 && month.length === 2 && day.length === 2;
+    };
 
     const handleSubmit = () => {
         if (Odometro < initialOdometro) {
@@ -52,6 +65,18 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
             setTorqueError(true);
             return;
         }
+        // Validación de formato de fecha
+        if (fechaAsignacion && !validarFormatoFecha(fechaAsignacion)) {
+            setFechaFormatoError(true);
+            return;
+        }
+        setFechaFormatoError(false);
+        // Validación de fecha de asignación
+        if (fechaAsignacion && fechaRegistroNeumatico && fechaAsignacion < fechaRegistroNeumatico) {
+            setFechaError(true);
+            return;
+        }
+        setFechaError(false);
         onSubmit({ Odometro, Remanente, PresionAire, TorqueAplicado, FechaAsignacion: fechaAsignacion });
         onClose();
     };
@@ -127,7 +152,7 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                             }}
                             fullWidth
                             error={torqueError}
-                            helperText={torqueError ? 'Debe estar entre 110 y 150 Nm (Toyota Hilux)' : 'Recomendado: 110-150 Nm'}
+                            helperText={torqueError ? 'Debe estar entre 110 y 150 Nm (Toyo' : 'Recomendado: 110-150 Nm'}
                             InputProps={{
                                 inputProps: { min: 110, max: 150 },
                                 sx: {
@@ -145,9 +170,25 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                             label="Fecha de Asignación"
                             type="date"
                             value={fechaAsignacion}
-                            onChange={e => setFechaAsignacion(e.target.value)}
+                            onChange={e => {
+                                setFechaAsignacion(e.target.value);
+                                // Validar formato en el cambio
+                                if (e.target.value && !validarFormatoFecha(e.target.value)) {
+                                    setFechaFormatoError(true);
+                                } else {
+                                    setFechaFormatoError(false);
+                                }
+                            }}
                             fullWidth
                             InputLabelProps={{ shrink: true }}
+                            error={fechaError || fechaFormatoError}
+                            helperText={
+                                fechaFormatoError
+                                    ? 'Formato inválido. Año debe tener 4 dígitos, mes y día 2 dígitos (YYYY-MM-DD)'
+                                    : fechaError
+                                        ? `No puede ser menor a la fecha de registro del neumático (${fechaRegistroNeumatico})`
+                                        : ''
+                            }
                         />
                     </Stack>
                     <Button onClick={handleSubmit} variant="contained" color="primary" fullWidth>
