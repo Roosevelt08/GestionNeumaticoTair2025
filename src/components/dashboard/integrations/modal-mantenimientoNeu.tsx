@@ -840,30 +840,32 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                 <DiagramaVehiculo
                                     neumaticosAsignados={neumaticosAsignadosState.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO')}
                                     layout="modal"
+                                    tipoModal="mantenimiento"
                                     onPosicionClick={handlePosicionClick}
                                     onRotarClick={() => setAccion('REUBICADO')}
                                     onDesasignarClick={() => setAccion('DESASIGNAR')}
-                                    fromMantenimientoModal={true}
+                                    fromMantenimientoModal={true}	
                                     placa={placa}
                                 />
                                 <img
                                     src="/assets/placa.png"
                                     alt="Placa"
                                     style={{
-                                        width: '120px',
+                                        width: '130px',
                                         height: '60px',
                                         objectFit: 'contain',
                                         position: 'absolute',
                                         top: '10px',
-                                        right: '68px',
+                                        right: '55px',
                                         zIndex: 2,
+                                        pointerEvents: 'none',
                                     }}
                                 />
                                 <Box
                                     sx={{
                                         position: 'absolute',
                                         top: '24px',
-                                        right: '68px',
+                                        right: '60px',
                                         zIndex: 3,
                                         color: 'black',
                                         padding: '2px 8px',
@@ -873,8 +875,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                                         fontSize: '24px',
                                         textAlign: 'center',
                                     }}
-                                >
-                                    {placa}
+                                    >
+                                        {placa}
                                 </Box>
                             </Box>
                         </Card>

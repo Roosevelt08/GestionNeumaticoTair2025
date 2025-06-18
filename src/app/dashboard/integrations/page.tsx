@@ -290,6 +290,9 @@ export default function Page(): React.JSX.Element {
       });
       const ultimosPorCodigo = (await Promise.all(promesas)).filter(Boolean);
       setNeumaticosAsignados(ultimosPorCodigo);
+      // Limpiar cache de fechas de registro para forzar recarga
+      setFechasRegistro({});
+      setFechasCargando({});
     }
   };
 

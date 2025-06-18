@@ -498,7 +498,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       await guardarInspeccion(payloads); // El backend acepta array
       setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
       setInspeccionesPendientes([]);
-      if (onUpdateAsignados) onUpdateAsignados();
+      if (onUpdateAsignados) await onUpdateAsignados(); // <--- Forzar refresh de tabla
       marcarInspeccionHoy(); // Marcar inspección realizada hoy
       onClose();
     } catch (error: any) {
@@ -743,6 +743,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                   <DiagramaVehiculo
                     neumaticosAsignados={neumaticosAsignados}
                     layout="modal"
+                    tipoModal="inspeccion"
                     onPosicionClick={handleSeleccionarNeumatico}
                     onMantenimientoClick={() => {
                       setOpenMantenimiento(true);

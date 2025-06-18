@@ -76,6 +76,12 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
             setFechaError(true);
             return;
         }
+        // Validación de fecha no mayor a hoy
+        const hoy = new Date().toISOString().slice(0, 10);
+        if (fechaAsignacion > hoy) {
+            setFechaError(true);
+            return;
+        }
         setFechaError(false);
         onSubmit({ Odometro, Remanente, PresionAire, TorqueAplicado, FechaAsignacion: fechaAsignacion });
         onClose();
@@ -178,15 +184,28 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                                 } else {
                                     setFechaFormatoError(false);
                                 }
+                                // Validar que no sea mayor a hoy
+                                const hoy = new Date().toISOString().slice(0, 10);
+                                if (e.target.value > hoy) {
+                                    setFechaError(true);
+                                } else if (fechaRegistroNeumatico && e.target.value < fechaRegistroNeumatico) {
+                                    setFechaError(true);
+                                } else {
+                                    setFechaError(false);
+                                }
                             }}
                             fullWidth
                             InputLabelProps={{ shrink: true }}
+                            inputProps={{
+                                max: new Date().toISOString().slice(0, 10),
+                                min: fechaRegistroNeumatico || undefined
+                            }}
                             error={fechaError || fechaFormatoError}
                             helperText={
                                 fechaFormatoError
                                     ? 'Formato inválido. Año debe tener 4 dígitos, mes y día 2 dígitos (YYYY-MM-DD)'
                                     : fechaError
-                                        ? `No puede ser menor a la fecha de registro del neumático (${fechaRegistroNeumatico})`
+                                        ? `No puede ser menor a la fecha de registro del neumático (${fechaRegistroNeumatico}) ni mayor a hoy (${new Date().toISOString().slice(0, 10)})`
                                         : ''
                             }
                         />

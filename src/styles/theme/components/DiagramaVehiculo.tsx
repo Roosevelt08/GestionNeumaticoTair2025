@@ -2,6 +2,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { consultarInspeccionHoy } from '../../../api/Neumaticos';
+import Alert from '@mui/material/Alert';
 
 interface Neumatico {
     POSICION: string;
@@ -16,8 +17,10 @@ interface Neumatico {
 interface DiagramaVehiculoProps {
     neumaticosAsignados: Neumatico[];
     layout?: 'dashboard' | 'modal';
+    tipoModal?: 'inspeccion' | 'mantenimiento'; // NUEVO: para distinguir el modal
 }
 
+// Layouts diferenciados para dashboard, modalInspeccion y modalMantenimiento
 const posiciones = {
     dashboard: [
         { key: 'POS01', top: '39px', left: '133px' },
@@ -25,11 +28,17 @@ const posiciones = {
         { key: 'POS03', top: '208px', left: '133px' },
         { key: 'POS04', top: '208px', left: '29px' },
     ],
-    modal: [
+    modalInspeccion: [
         { key: 'POS01', top: '124px', left: '145px' },
         { key: 'POS02', top: '124px', left: '45px' },
         { key: 'POS03', top: '288px', left: '145px' },
         { key: 'POS04', top: '288px', left: '45px' },
+    ],
+    modalMantenimiento: [
+        { key: 'POS01', top: '115px', left: '289px' },
+        { key: 'POS02', top: '115px', left: '190px' },
+        { key: 'POS03', top: '279px', left: '289px' },
+        { key: 'POS04', top: '279px', left: '190px' },
     ],
 };
 
@@ -39,9 +48,19 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
     onRotarClick?: () => void;
     onDesasignarClick?: () => void;
     fromMantenimientoModal?: boolean;
-    placa?: string; // <-- Asegúrate de pasar la placa desde el padre
-}> = ({ neumaticosAsignados = [], layout = 'dashboard', onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, placa, ...props }) => {
-    const pos = posiciones[layout];
+    placa?: string;
+}> = ({ neumaticosAsignados = [], layout = 'dashboard', tipoModal, onPosicionClick, onRotarClick, onDesasignarClick, fromMantenimientoModal, placa, ...props }) => {
+    // Selección de layout según tipoModal
+    let pos;
+    if (layout === 'modal') {
+        if (tipoModal === 'mantenimiento') {
+            pos = posiciones.modalMantenimiento;
+        } else {
+            pos = posiciones.modalInspeccion;
+        }
+    } else {
+        pos = posiciones.dashboard;
+    }
     const neumaticosFiltrados = React.useMemo(() => {
         // 1. Filtrar por posición: el movimiento más reciente por posición
         const porPosicion = new Map<string, Neumatico>();
@@ -66,13 +85,24 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
         return Array.from(porCodigo.values());
     }, [neumaticosAsignados]);
     // Handler para click en rotar con validación de inspección
+    const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
+    // Ocultar el mensaje automáticamente después de 5 segundos
+    React.useEffect(() => {
+        if (errorMsg) {
+            const timer = setTimeout(() => setErrorMsg(null), 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [errorMsg]);
+
     const handleRotarClick = async () => {
         // Tomar el primer neumático asignado (puedes ajustar la lógica si es por posición específica)
         const neu = neumaticosFiltrados[0];
         if (!neu || !placa) {
-            alert('No se puede validar inspección: falta neumático o placa');
+            setErrorMsg('No se puede validar inspección: falta neumático o placa');
             return;
         }
+        setErrorMsg(null); // Limpiar error previo
         const codigo = neu.CODIGO_NEU || neu.CODIGO;
         const hoy = new Date();
         const yyyy = hoy.getFullYear();
@@ -86,20 +116,14 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
             } else {
                 let msg = 'Realiza una inspección, ya que la última inspección fue ';
                 msg += resp.ultima ? resp.ultima : 'NUNCA';
-                // alert(msg);
-                if (window && typeof window !== 'undefined') {
-                    alert(msg);
-                }
-                // Si tienes una función para abrir el modal de inspección, llámala aquí
-                if (typeof window !== 'undefined' && window.dispatchEvent) {
-                    window.dispatchEvent(new CustomEvent('abrir-modal-inspeccion'));
-                }
+                setErrorMsg(msg);
+                // Eliminar: abrir modal de inspección aquí
             }
         } catch (e) {
             if (e instanceof Error) {
-                alert('Error al consultar inspección: ' + e.message);
+                setErrorMsg('Error al consultar inspección: ' + e.message);
             } else {
-                alert('Error al consultar inspección: ' + String(e));
+                setErrorMsg('Error al consultar inspección: ' + String(e));
             }
         }
     };
@@ -111,8 +135,47 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
                     : { position: 'relative', width: '370px', height: '430px' }
             }
         >
+            {errorMsg && (
+                <Alert
+                    variant="filled"
+                    severity="error"
+                    sx={{ mb: 1, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, display: 'flex', alignItems: 'center' }}
+                    action={
+                        <button
+                            style={{
+                                background: '#fff',
+                                color: '#d32f2f',
+                                border: 'none',
+                                borderRadius: 4,
+                                padding: '4px 12px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                marginLeft: 16
+                            }}
+                            onClick={() => {
+                                setErrorMsg(null);
+                                // Si el mensaje es de inspección faltante, abrir la ventana de inspección
+                                if (errorMsg && errorMsg.startsWith('Realiza una inspección')) {
+                                    if (typeof window !== 'undefined' && window.dispatchEvent) {
+                                        window.dispatchEvent(new CustomEvent('abrir-modal-inspeccion'));
+                                    }
+                                }
+                            }}
+                        >
+                            Aceptar
+                        </button>
+                    }
+                >
+                    {errorMsg}
+                </Alert>
+            )}
+            {/* Imagen base diferente según tipoModal */}
             <img
-                src="/assets/car-diagram.png"
+                src={
+                    tipoModal === 'mantenimiento'
+                        ? '/assets/car-diagram.png'
+                        : '/assets/car-diagram.png'
+                }
                 alt="Base"
                 style={
                     layout === 'dashboard'
@@ -124,6 +187,18 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
                             top: '-43px',
                             left: '-25px',
                             zIndex: 1,
+                            pointerEvents: 'none',
+                        }
+                        : tipoModal === 'mantenimiento'
+                        ? {
+                            width: '260px',
+                            height: '380px',
+                            objectFit: 'contain',
+                            position: 'absolute',
+                            top: '50px',
+                            left: '122px',
+                            zIndex: 1,
+                            pointerEvents: 'none',
                         }
                         : {
                             width: '250px',
@@ -133,11 +208,12 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
                             top: '60px',
                             left: '-17px',
                             zIndex: 1,
+                            pointerEvents: 'none',
                         }
                 }
             />
             {/* Acciones rápidas solo en modal de mantenimiento */}
-            {layout === 'modal' && fromMantenimientoModal && (
+            {tipoModal === 'mantenimiento' && layout === 'modal' && fromMantenimientoModal && (
                 <>
                     <img src="/assets/rotar.png" alt="Reubicar" title="Reubicar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={handleRotarClick} />
                     <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onDesasignarClick} />
