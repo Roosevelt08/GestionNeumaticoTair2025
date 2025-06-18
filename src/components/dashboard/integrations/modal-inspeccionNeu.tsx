@@ -174,6 +174,19 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   // Cuando se selecciona un neumático, llenar el formulario con datos completos de neu_asignado
   const handleSeleccionarNeumatico = async (neumatico: any) => {
+    // Buscar si ya existe inspección local para esta posición
+    const inspeccionLocal = inspeccionesPendientes.find(i => i.posicion === (neumatico.POSICION || neumatico.POSICION_NEU));
+    if (inspeccionLocal) {
+      // Si existe, cargar los datos guardados localmente
+      setNeumaticoSeleccionado(neumatico);
+      setFormValues({ ...inspeccionLocal });
+      setOdometro(Number(inspeccionLocal.kilometro));
+      setMinKilometro(Number(inspeccionLocal.kilometro));
+      setKmError(false);
+      setRemanenteError(false);
+      setFormValuesInicial({ ...inspeccionLocal });
+      return;
+    }
     console.log('neumatico clickeado:', neumatico);
     console.log('neuAsignados en handleSeleccionarNeumatico:', neuAsignados);
     // Buscar el neumático realmente asignado a la posición clickeada Y con el mismo código
@@ -336,10 +349,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       setSnackbar({ open: true, message: 'Debe seleccionar un neumático.', severity: 'error' });
       return;
     }
-    if (fechaMinimaInspeccion && (formValues.fecha_inspeccion < fechaMinimaInspeccion)) {
-      setSnackbar({ open: true, message: `La fecha de inspección no puede ser menor a la última registrada: ${fechaMinimaInspeccion}`, severity: 'error' });
-      return;
-    }
+    // Eliminada la validación de fecha de inspección aquí
     if (!hayCambiosFormulario) {
       setSnackbar({ open: true, message: 'No hay cambios para guardar.', severity: 'info' });
       return;
@@ -350,7 +360,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       return;
     }
     if (remanenteError) {
-      setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${valorReferenciaRemanente}` , severity: 'error' });
+      setSnackbar({ open: true, message: `El valor de remanente no puede ser mayor a ${valorReferenciaRemanente}`, severity: 'error' });
       return;
     }
     // Buscar la fecha de asignación original para este neumático
@@ -363,7 +373,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       fechaAsignacion = movAsign?.FECHA_ASIGNACION || movAsign?.FECHA_REGISTRO || null;
     }
     // Guardar/actualizar inspección localmente por posición, incluyendo la fecha de asignación
-    const nuevaInspeccion = { ...formValues, fecha_asignacion: fechaAsignacion ? new Date(fechaAsignacion).toISOString().slice(0, 10) : null };
+    const nuevaInspeccion = { ...formValues, kilometro: Odometro.toString(), fecha_asignacion: fechaAsignacion ? new Date(fechaAsignacion).toISOString().slice(0, 10) : null };
     setInspeccionesPendientes(prev => {
       const idx = prev.findIndex(i => i.posicion === nuevaInspeccion.posicion);
       let nuevoArray;
@@ -377,97 +387,124 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
       console.log('Inspecciones guardadas localmente:', nuevoArray);
       return nuevoArray;
     });
-    setFormValuesInicial({ ...formValues });
+    setFormValuesInicial({ ...formValues, kilometro: Odometro.toString() });
     setSnackbar({ open: true, message: 'Inspección guardada localmente.', severity: 'success' });
+
+    // --- NAVEGACIÓN AUTOMÁTICA A LA SIGUIENTE POSICIÓN PENDIENTE ---
+    // Buscar las posiciones ya inspeccionadas (después de guardar la actual)
+    setTimeout(() => {
+      let inspeccionesActualizadas = [];
+      setInspeccionesPendientes(prev => {
+        inspeccionesActualizadas = prev;
+        return prev;
+      });
+      // Si no se pudo obtener por el setState, usar el valor anterior + la actual
+      const posicionesInspeccionadas = [
+        ...inspeccionesPendientes.map(i => i.posicion),
+        nuevaInspeccion.posicion
+      ];
+      // Buscar la siguiente posición pendiente
+      const siguientePendiente = neumaticosAsignados.find(
+        n => !posicionesInspeccionadas.includes(n.POSICION)
+      );
+      if (siguientePendiente) {
+        handleSeleccionarNeumatico(siguientePendiente);
+      } else {
+        // Si no hay más pendientes, opcional: limpiar selección
+        // setNeumaticoSeleccionado(null);
+        // setFormValues({ ...formValues, ... });
+      }
+    }, 200); // Pequeño delay para asegurar que el estado se actualizó
   };
 
   // Enviar todas las inspecciones pendientes al backend
   const handleEnviarYGuardar = async () => {
-    if (kmError) {
-      setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
-      return;
-    }
-    if (inspeccionesPendientes.length !== 4) {
-      setSnackbar({ open: true, message: 'Debe inspeccionar los 4 neumáticos antes de enviar.', severity: 'error' });
-      return;
-    }
-    // --- LOG para ver el array antes de enviar ---
-    // El array que se envía al backend debe tener la estructura final, no el array local crudo
-    const now = new Date();
-    const fechaActual = now.toISOString();
-    const formatDate = (dateStr: string) => {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return '';
-      return d.toISOString().slice(0, 10);
-    };
-    const formatTimestamp = (dateStr: string) => {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return '';
-      return d.toISOString().slice(0, 19).replace('T', 'T'); // Mantener formato ISO
-    };
-    // Utilidad para obtener fecha/hora local en formato YYYY-MM-DD HH:mm:ss
-    const getLocalDateTimeString = () => {
-      const d = new Date();
-      const pad = (n: number) => n.toString().padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    };
-    const payloads = inspeccionesPendientes.map(ins => {
-      const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
-      const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
-      const referencia = poNeu?.REMANENTE ? parseFloat(poNeu.REMANENTE) : 0;
-      const estadoDecimal = referencia > 0 ? Math.round((remanente * 100) / referencia) : null;
-      // Usar la fecha de asignación guardada en la inspección, o la de poNeu si no existe
-      let fechaAsignacion = ins.fecha_asignacion;
-      if (!fechaAsignacion && poNeu?.FECHA_ASIGNACION) fechaAsignacion = poNeu.FECHA_ASIGNACION;
-      // Construir el objeto en el orden exacto esperado por el backend, usando null en vez de string vacío
-      const obj = {
-        CARGA: poNeu?.CARGA ?? null,
-        CODIGO: ins.codigo ?? null,
-        COSTO: poNeu?.COSTO ? parseFloat(poNeu.COSTO) : null,
-        DISEÑO: ins.diseño ?? null,
-        ESTADO: estadoDecimal,
-        FECHA_ASIGNACION: fechaAsignacion || null,
-        FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
-        FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
-        FECHA_MOVIMIENTO: getLocalDateTimeString(),
-        FECHA_REGISTRO: formatDate(ins.fecha_inspeccion) || formatDate(new Date().toISOString()) || null,
-        KILOMETRO: ins.kilometro ? parseInt(ins.kilometro) : null,
-        MARCA: ins.marca ?? null,
-        MEDIDA: ins.medida ?? null,
-        OBSERVACION: ins.observacion ?? null,
-        OC: poNeu?.OC ?? null,
-        PLACA: placa ?? null,
-        POSICION_NEU: ins.posicion ?? null,
-        PR: poNeu?.PR ?? null,
-        PRESION_AIRE: ins.presion_aire ? parseFloat(ins.presion_aire) : null,
-        PROVEEDOR: poNeu?.PROVEEDOR ?? null,
-        PROYECTO: vehiculo?.proyecto ?? null,
-        REMANENTE: ins.remanente ? parseInt(ins.remanente) : null,
-        RQ: poNeu?.RQ ?? null,
-        TIPO_MOVIMIENTO: ins.tipo_movimiento ?? null,
-        TORQUE_APLICADO: ins.torque ? parseFloat(ins.torque) : null,
-        USUARIO_SUPER: user?.name || user?.usuario || null,
-        VELOCIDAD: poNeu?.VELOCIDAD ?? null,
+      if (kmError) {
+        setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
+        return;
+      }
+      if (inspeccionesPendientes.length !== 4) {
+        setSnackbar({ open: true, message: 'Debe inspeccionar los 4 neumáticos antes de enviar.', severity: 'error' });
+        return;
+      }
+      // Validación global de fecha de inspección
+      if (fechaMinimaInspeccion && formValues.fecha_inspeccion < fechaMinimaInspeccion) {
+        setSnackbar({ open: true, message: `La fecha de inspección no puede ser menor a la última registrada: ${fechaMinimaInspeccion}`, severity: 'error' });
+        return;
+      }
+      // Usar SIEMPRE el valor de formValues.fecha_inspeccion para todos los objetos
+      const fechaInspeccionGlobal = formValues.fecha_inspeccion;
+      let fechaAsignacionGlobal = null;
+      let kilometroGlobal = Odometro;
+      if (inspeccionesPendientes.length > 0) {
+        fechaAsignacionGlobal = inspeccionesPendientes[0].fecha_asignacion;
+      }
+      const now = new Date();
+      const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        return d.toISOString().slice(0, 10);
       };
-      return obj;
-    });
-    if (payloads.length > 0) {
-      console.log('Claves del primer objeto del payload:', Object.keys(payloads[0]));
-    }
-    console.log('Payload FINAL a enviar al backend:', payloads);
-    try {
-      await guardarInspeccion(payloads); // El backend acepta array
-      setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
-      setInspeccionesPendientes([]);
-      if (onUpdateAsignados) onUpdateAsignados();
-      marcarInspeccionHoy(); // Marcar inspección realizada hoy
-      onClose();
-    } catch (error: any) {
-      setSnackbar({ open: true, message: error?.message || 'Error al enviar inspecciones.', severity: 'error' });
-    }
-  };
+      const getLocalDateTimeString = () => {
+        const d = new Date();
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      };
+      const payloads = inspeccionesPendientes.map(ins => {
+        const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
+        const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
+        const referencia = poNeu?.REMANENTE ? parseFloat(poNeu.REMANENTE) : 0;
+        const estadoDecimal = referencia > 0 ? Math.round((remanente * 100) / referencia) : null;
+        let fechaAsignacion = fechaAsignacionGlobal;
+        if (!fechaAsignacion && poNeu?.FECHA_ASIGNACION) fechaAsignacion = poNeu.FECHA_ASIGNACION;
+        // Usar SIEMPRE la fecha seleccionada por el usuario
+        const obj = {
+          CARGA: poNeu?.CARGA ?? null,
+          CODIGO: ins.codigo ?? null,
+          COSTO: poNeu?.COSTO ? parseFloat(poNeu.COSTO) : null,
+          DISEÑO: ins.diseño ?? null,
+          ESTADO: estadoDecimal,
+          FECHA_ASIGNACION: fechaAsignacion || null,
+          FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
+          FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
+          FECHA_MOVIMIENTO: getLocalDateTimeString(),
+          FECHA_REGISTRO: formatDate(fechaInspeccionGlobal) || null,
+          KILOMETRO: kilometroGlobal ? parseInt(kilometroGlobal.toString()) : null,
+          MARCA: ins.marca ?? null,
+          MEDIDA: ins.medida ?? null,
+          OBSERVACION: ins.observacion ?? null,
+          OC: poNeu?.OC ?? null,
+          PLACA: placa ?? null,
+          POSICION_NEU: ins.posicion ?? null,
+          PR: poNeu?.PR ?? null,
+          PRESION_AIRE: ins.presion_aire ? parseFloat(ins.presion_aire) : null,
+          PROVEEDOR: poNeu?.PROVEEDOR ?? null,
+          PROYECTO: vehiculo?.proyecto ?? null,
+          REMANENTE: ins.remanente ? parseInt(ins.remanente) : null,
+          RQ: poNeu?.RQ ?? null,
+          TIPO_MOVIMIENTO: ins.tipo_movimiento ?? null,
+          TORQUE_APLICADO: ins.torque ? parseFloat(ins.torque) : null,
+          USUARIO_SUPER: user?.name || user?.usuario || null,
+          VELOCIDAD: poNeu?.VELOCIDAD ?? null,
+        };
+        return obj;
+      });
+      if (payloads.length > 0) {
+        console.log('Claves del primer objeto del payload:', Object.keys(payloads[0]));
+      }
+      console.log('Payload FINAL a enviar al backend:', payloads);
+      try {
+        await guardarInspeccion(payloads); // El backend acepta array
+        setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
+        setInspeccionesPendientes([]);
+        if (onUpdateAsignados) onUpdateAsignados();
+        marcarInspeccionHoy(); // Marcar inspección realizada hoy
+        onClose();
+      } catch (error: any) {
+        setSnackbar({ open: true, message: error?.message || 'Error al enviar inspecciones.', severity: 'error' });
+      }
+    };
 
   // Guardar en localStorage la fecha de la última inspección exitosa
   const marcarInspeccionHoy = () => {
@@ -510,6 +547,14 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     window.addEventListener('abrir-modal-inspeccion', handler);
     return () => window.removeEventListener('abrir-modal-inspeccion', handler);
   }, [open, onClose]);
+
+  // Constante para habilitar el botón solo si los campos requeridos están llenos
+  const camposRequeridosLlenos = !!(
+    formValues.remanente &&
+    formValues.presion_aire &&
+    formValues.torque &&
+    formValues.observacion
+  );
 
   return (
     <>
@@ -596,70 +641,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               </Card>
               <Card sx={{ p: 2 }}>
                 <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2 }}>
+                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: {  minWidth: `${formValues.posicion.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Código" name="codigo" size="small" value={formValues.codigo} inputProps={{ readOnly: true, style: { minWidth: `${formValues.codigo.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Marca" name="marca" size="small" value={formValues.marca} inputProps={{ readOnly: true, style: { minWidth: `${formValues.marca.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Medida" name="medida" size="small" value={formValues.medida} inputProps={{ readOnly: true, style: { minWidth: `${formValues.medida.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Diseño" name="diseño" size="small" value={formValues.diseño} inputProps={{ readOnly: true, style: { minWidth: `${formValues.diseño.length + 3}ch` } }} disabled={bloquearFormulario} />
-                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: { minWidth: `${formValues.posicion.length + 3}ch` } }} disabled={bloquearFormulario} />
-                  <TextField
-                    label="Kilometro"
-                    type="number"
-                    value={Odometro}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setOdometro(value);
-                      if (value >= minKilometro) {
-                        setKmError(false);
-                      } else {
-                        setKmError(true);
-                      }
-                    }}
-                    fullWidth
-                    error={kmError}
-                    InputProps={{
-                      inputProps: { min: minKilometro },
-                      sx: {
-                        'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
-                          WebkitAppearance: 'none',
-                          margin: 0,
-                        },
-                        'input[type=number]': {
-                          MozAppearance: 'textfield',
-                        },
-                      },
-                    }}
-                    sx={{ maxWidth: 180, ml: 2 }}
-                  />
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'text.secondary',
-                      minWidth: 180,
-                      mt: 0.5,
-                      ml: 2,
-                      whiteSpace: 'nowrap',
-                      fontWeight: 'normal',
-                      display: 'block',
-                    }}
-                  >
-                    {`Kilometro actual: ${minKilometro.toLocaleString()} km`}
-                  </Typography>
-                  {kmError && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: 'error.main',
-                        minWidth: 180,
-                        mt: 0.5,
-                        ml: 2,
-                        whiteSpace: 'nowrap',
-                        fontWeight: 'bold',
-                        display: 'block',
-                      }}
-                    >
-                      {`No puede ser menor a ${minKilometro.toLocaleString()} km`}
-                    </Typography>
-                  )}
                   <TextField
                     label="Remanente"
                     name="remanente"
@@ -693,40 +679,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     size="small"
                     value="INSPECCION"
                     InputProps={{ readOnly: true, style: { minWidth: `${'INSPECCION'.length + 3}ch` } }}
-                    disabled={bloquearFormulario}
+                    disabled={bloquearFormulario} 
                   />
-                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
                   <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} disabled={bloquearFormulario} />
-                  <TextField
-                    label="Fecha de inspección"
-                    name="fecha_inspeccion"
-                    size="small"
-                    type="date"
-                    value={
-                      formValues.fecha_inspeccion || hoy
-                    }
-                    onChange={e => {
-                      const value = e.target.value;
-                      setFormValues(prev => ({ ...prev, fecha_inspeccion: value }));
-                      if (fechaAsignacionOriginal && value < fechaAsignacionOriginal) {
-                        setFechaInspeccionError(`No puede ser menor a la fecha de asignación: ${fechaAsignacionOriginal}`);
-                      } else if (value > hoy) {
-                        setFechaInspeccionError(`No puede ser mayor a la fecha de hoy: ${hoy}`);
-                      } else {
-                        setFechaInspeccionError(null);
-                      }
-                    }}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{
-                      min: fechaAsignacionOriginal || undefined,
-                      max: hoy
-                    }}
-                    sx={{ gridColumn: 'span 2' }}
-                    disabled={bloquearFormulario}
-                    error={!!fechaInspeccionError}
-                    helperText={fechaInspeccionError || (fechaAsignacionOriginal ? `Solo fechas entre ${fechaAsignacionOriginal} y ${hoy}` : undefined)}
-                  />
-
+                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
                 </Box>
               </Card>
             </Stack>
@@ -747,7 +703,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                   onPosicionClick={handleSeleccionarNeumatico}
                   onMantenimientoClick={() => {
                     setOpenMantenimiento(true);
-                    onClose(); // Cierra el modal de inspección al abrir el de mantenimiento
+                    onClose();
                   }}
                 />
                 <img
@@ -785,12 +741,108 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={!hayCambiosFormulario || bloquearFormulario || kmError}>
-            Guardar inspección
-          </Button>
-          <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4 || bloquearFormulario || kmError}>
-            Enviar y Guardar
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+            <TextField
+              label="Fecha de inspección"
+              name="fecha_inspeccion"
+              size="small"
+              type="date"
+              value={formValues.fecha_inspeccion}
+              onChange={e => {
+                const value = e.target.value;
+                setFormValues(prev => ({ ...prev, fecha_inspeccion: value }));
+                if (fechaAsignacionOriginal && value < fechaAsignacionOriginal) {
+                  setFechaInspeccionError(`No puede ser menor a la fecha de asignación: ${fechaAsignacionOriginal}`);
+                } else if (value > hoy) {
+                  setFechaInspeccionError(`No puede ser mayor a la fecha de hoy: ${hoy}`);
+                } else {
+                  setFechaInspeccionError(null);
+                }
+              }}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                min: fechaAsignacionOriginal || undefined,
+                max: hoy
+              }}
+              sx={{ minWidth: 180, mr: 2 }}
+              disabled={
+                bloquearFormulario ||
+                inspeccionesPendientes.length !== 4
+              }
+              error={!!fechaInspeccionError}
+              helperText={fechaInspeccionError || (fechaAsignacionOriginal ? `Solo fechas entre ${fechaAsignacionOriginal} y ${hoy}` : undefined)}
+            />
+            <TextField
+              label="Kilometro"
+              type="number"
+              value={Odometro}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                setOdometro(value);
+                if (value >= minKilometro) {
+                  setKmError(false);
+                } else {
+                  setKmError(true);
+                }
+              }}
+              error={kmError}
+              InputProps={{
+                inputProps: { min: minKilometro },
+                sx: {
+                  'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
+                    WebkitAppearance: 'none',
+                    margin: 0,
+                  },
+                  'input[type=number]': {
+                    MozAppearance: 'textfield',
+                  },
+                },
+              }}
+              sx={{ minWidth: 180, mr: 2 }}
+              disabled={
+                bloquearFormulario ||
+                inspeccionesPendientes.length !== 4
+              }
+            />
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                minWidth: 140,
+                whiteSpace: 'nowrap',
+                fontWeight: 'normal',
+                display: 'block',
+                mr: 2
+              }}
+            >
+              {`Kilometro actual: ${minKilometro.toLocaleString()} km`}
+            </Typography>
+            {kmError && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'error.main',
+                  minWidth: 180,
+                  whiteSpace: 'nowrap',
+                  fontWeight: 'bold',
+                  display: 'block',
+                  mr: 2
+                }}
+              >
+                {`No puede ser menor a ${minKilometro.toLocaleString()} km`}
+              </Typography>
+            )}
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+              <Button color="secondary" variant="outlined" onClick={handleGuardarInspeccionLocal} disabled={
+                !hayCambiosFormulario || bloquearFormulario || kmError || !camposRequeridosLlenos
+              }>
+                Siguiente posición
+              </Button>
+              <Button color="success" variant="contained" sx={{ ml: 1 }} onClick={handleEnviarYGuardar} disabled={inspeccionesPendientes.length !== 4 || bloquearFormulario || kmError}>
+                Enviar y Guardar
+              </Button>
+            </Box>
+          </Box>
         </DialogActions>
       </Dialog>
       <ModalMantenimientoNeu
