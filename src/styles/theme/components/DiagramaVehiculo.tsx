@@ -26,10 +26,10 @@ const posiciones = {
         { key: 'POS04', top: '208px', left: '29px' },
     ],
     modal: [
-        { key: 'POS01', top: '124px', left: '282px' },
-        { key: 'POS02', top: '124px', left: '182px' },
-        { key: 'POS03', top: '288px', left: '282px' },
-        { key: 'POS04', top: '288px', left: '182px' },
+        { key: 'POS01', top: '124px', left: '145px' },
+        { key: 'POS02', top: '124px', left: '45px' },
+        { key: 'POS03', top: '288px', left: '145px' },
+        { key: 'POS04', top: '288px', left: '45px' },
     ],
 };
 
@@ -131,7 +131,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
                             objectFit: 'contain',
                             position: 'absolute',
                             top: '60px',
-                            left: '120px',
+                            left: '-17px',
                             zIndex: 1,
                         }
                 }

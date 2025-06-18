@@ -419,92 +419,92 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   // Enviar todas las inspecciones pendientes al backend
   const handleEnviarYGuardar = async () => {
-      if (kmError) {
-        setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
-        return;
-      }
-      if (inspeccionesPendientes.length !== 4) {
-        setSnackbar({ open: true, message: 'Debe inspeccionar los 4 neumáticos antes de enviar.', severity: 'error' });
-        return;
-      }
-      // Validación global de fecha de inspección
-      if (fechaMinimaInspeccion && formValues.fecha_inspeccion < fechaMinimaInspeccion) {
-        setSnackbar({ open: true, message: `La fecha de inspección no puede ser menor a la última registrada: ${fechaMinimaInspeccion}`, severity: 'error' });
-        return;
-      }
-      // Usar SIEMPRE el valor de formValues.fecha_inspeccion para todos los objetos
-      const fechaInspeccionGlobal = formValues.fecha_inspeccion;
-      let fechaAsignacionGlobal = null;
-      let kilometroGlobal = Odometro;
-      if (inspeccionesPendientes.length > 0) {
-        fechaAsignacionGlobal = inspeccionesPendientes[0].fecha_asignacion;
-      }
-      const now = new Date();
-      const formatDate = (dateStr: string) => {
-        if (!dateStr) return '';
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return '';
-        return d.toISOString().slice(0, 10);
-      };
-      const getLocalDateTimeString = () => {
-        const d = new Date();
-        const pad = (n: number) => n.toString().padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-      };
-      const payloads = inspeccionesPendientes.map(ins => {
-        const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
-        const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
-        const referencia = poNeu?.REMANENTE ? parseFloat(poNeu.REMANENTE) : 0;
-        const estadoDecimal = referencia > 0 ? Math.round((remanente * 100) / referencia) : null;
-        let fechaAsignacion = fechaAsignacionGlobal;
-        if (!fechaAsignacion && poNeu?.FECHA_ASIGNACION) fechaAsignacion = poNeu.FECHA_ASIGNACION;
-        // Usar SIEMPRE la fecha seleccionada por el usuario
-        const obj = {
-          CARGA: poNeu?.CARGA ?? null,
-          CODIGO: ins.codigo ?? null,
-          COSTO: poNeu?.COSTO ? parseFloat(poNeu.COSTO) : null,
-          DISEÑO: ins.diseño ?? null,
-          ESTADO: estadoDecimal,
-          FECHA_ASIGNACION: fechaAsignacion || null,
-          FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
-          FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
-          FECHA_MOVIMIENTO: getLocalDateTimeString(),
-          FECHA_REGISTRO: formatDate(fechaInspeccionGlobal) || null,
-          KILOMETRO: kilometroGlobal ? parseInt(kilometroGlobal.toString()) : null,
-          MARCA: ins.marca ?? null,
-          MEDIDA: ins.medida ?? null,
-          OBSERVACION: ins.observacion ?? null,
-          OC: poNeu?.OC ?? null,
-          PLACA: placa ?? null,
-          POSICION_NEU: ins.posicion ?? null,
-          PR: poNeu?.PR ?? null,
-          PRESION_AIRE: ins.presion_aire ? parseFloat(ins.presion_aire) : null,
-          PROVEEDOR: poNeu?.PROVEEDOR ?? null,
-          PROYECTO: vehiculo?.proyecto ?? null,
-          REMANENTE: ins.remanente ? parseInt(ins.remanente) : null,
-          RQ: poNeu?.RQ ?? null,
-          TIPO_MOVIMIENTO: ins.tipo_movimiento ?? null,
-          TORQUE_APLICADO: ins.torque ? parseFloat(ins.torque) : null,
-          USUARIO_SUPER: user?.name || user?.usuario || null,
-          VELOCIDAD: poNeu?.VELOCIDAD ?? null,
-        };
-        return obj;
-      });
-      if (payloads.length > 0) {
-        console.log('Claves del primer objeto del payload:', Object.keys(payloads[0]));
-      }
-      console.log('Payload FINAL a enviar al backend:', payloads);
-      try {
-        await guardarInspeccion(payloads); // El backend acepta array
-        setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
-        setInspeccionesPendientes([]);
-        if (onUpdateAsignados) onUpdateAsignados();
-        marcarInspeccionHoy(); // Marcar inspección realizada hoy
-        onClose();
-      } catch (error: any) {
-        setSnackbar({ open: true, message: error?.message || 'Error al enviar inspecciones.', severity: 'error' });
-      }
+    if (kmError) {
+      setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
+      return;
+    }
+    if (inspeccionesPendientes.length !== 4) {
+      setSnackbar({ open: true, message: 'Debe inspeccionar los 4 neumáticos antes de enviar.', severity: 'error' });
+      return;
+    }
+    // Validación global de fecha de inspección
+    if (fechaMinimaInspeccion && formValues.fecha_inspeccion < fechaMinimaInspeccion) {
+      setSnackbar({ open: true, message: `La fecha de inspección no puede ser menor a la última registrada: ${fechaMinimaInspeccion}`, severity: 'error' });
+      return;
+    }
+    // Usar SIEMPRE el valor de formValues.fecha_inspeccion para todos los objetos
+    const fechaInspeccionGlobal = formValues.fecha_inspeccion;
+    let fechaAsignacionGlobal = null;
+    let kilometroGlobal = Odometro;
+    if (inspeccionesPendientes.length > 0) {
+      fechaAsignacionGlobal = inspeccionesPendientes[0].fecha_asignacion;
+    }
+    const now = new Date();
+    const formatDate = (dateStr: string) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 10);
     };
+    const getLocalDateTimeString = () => {
+      const d = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    };
+    const payloads = inspeccionesPendientes.map(ins => {
+      const poNeu = poNeumaticos.find(n => String(n.CODIGO) === String(ins.codigo));
+      const remanente = ins.remanente ? parseFloat(ins.remanente) : 0;
+      const referencia = poNeu?.REMANENTE ? parseFloat(poNeu.REMANENTE) : 0;
+      const estadoDecimal = referencia > 0 ? Math.round((remanente * 100) / referencia) : null;
+      let fechaAsignacion = fechaAsignacionGlobal;
+      if (!fechaAsignacion && poNeu?.FECHA_ASIGNACION) fechaAsignacion = poNeu.FECHA_ASIGNACION;
+      // Usar SIEMPRE la fecha seleccionada por el usuario
+      const obj = {
+        CARGA: poNeu?.CARGA ?? null,
+        CODIGO: ins.codigo ?? null,
+        COSTO: poNeu?.COSTO ? parseFloat(poNeu.COSTO) : null,
+        DISEÑO: ins.diseño ?? null,
+        ESTADO: estadoDecimal,
+        FECHA_ASIGNACION: fechaAsignacion || null,
+        FECHA_COMPRA: formatDate(poNeu?.FECHA_COMPRA) || null,
+        FECHA_FABRICACION: poNeu?.FECHA_FABRICACION_COD ?? null,
+        FECHA_MOVIMIENTO: getLocalDateTimeString(),
+        FECHA_REGISTRO: formatDate(fechaInspeccionGlobal) || null,
+        KILOMETRO: kilometroGlobal ? parseInt(kilometroGlobal.toString()) : null,
+        MARCA: ins.marca ?? null,
+        MEDIDA: ins.medida ?? null,
+        OBSERVACION: ins.observacion ?? null,
+        OC: poNeu?.OC ?? null,
+        PLACA: placa ?? null,
+        POSICION_NEU: ins.posicion ?? null,
+        PR: poNeu?.PR ?? null,
+        PRESION_AIRE: ins.presion_aire ? parseFloat(ins.presion_aire) : null,
+        PROVEEDOR: poNeu?.PROVEEDOR ?? null,
+        PROYECTO: vehiculo?.proyecto ?? null,
+        REMANENTE: ins.remanente ? parseInt(ins.remanente) : null,
+        RQ: poNeu?.RQ ?? null,
+        TIPO_MOVIMIENTO: ins.tipo_movimiento ?? null,
+        TORQUE_APLICADO: ins.torque ? parseFloat(ins.torque) : null,
+        USUARIO_SUPER: user?.name || user?.usuario || null,
+        VELOCIDAD: poNeu?.VELOCIDAD ?? null,
+      };
+      return obj;
+    });
+    if (payloads.length > 0) {
+      console.log('Claves del primer objeto del payload:', Object.keys(payloads[0]));
+    }
+    console.log('Payload FINAL a enviar al backend:', payloads);
+    try {
+      await guardarInspeccion(payloads); // El backend acepta array
+      setSnackbar({ open: true, message: 'Inspecciones enviadas correctamente.', severity: 'success' });
+      setInspeccionesPendientes([]);
+      if (onUpdateAsignados) onUpdateAsignados();
+      marcarInspeccionHoy(); // Marcar inspección realizada hoy
+      onClose();
+    } catch (error: any) {
+      setSnackbar({ open: true, message: error?.message || 'Error al enviar inspecciones.', severity: 'error' });
+    }
+  };
 
   // Guardar en localStorage la fecha de la última inspección exitosa
   const marcarInspeccionHoy = () => {
@@ -641,7 +641,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               </Card>
               <Card sx={{ p: 2 }}>
                 <Box component="form" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2 }}>
-                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: {  minWidth: `${formValues.posicion.length + 3}ch` } }} disabled={bloquearFormulario} />
+                  <TextField label="Posición" name="posicion" size="small" value={formValues.posicion} inputProps={{ readOnly: true, style: { minWidth: `${formValues.posicion.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Código" name="codigo" size="small" value={formValues.codigo} inputProps={{ readOnly: true, style: { minWidth: `${formValues.codigo.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Marca" name="marca" size="small" value={formValues.marca} inputProps={{ readOnly: true, style: { minWidth: `${formValues.marca.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Medida" name="medida" size="small" value={formValues.medida} inputProps={{ readOnly: true, style: { minWidth: `${formValues.medida.length + 3}ch` } }} disabled={bloquearFormulario} />
@@ -679,7 +679,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     size="small"
                     value="INSPECCION"
                     InputProps={{ readOnly: true, style: { minWidth: `${'INSPECCION'.length + 3}ch` } }}
-                    disabled={bloquearFormulario} 
+                    disabled={bloquearFormulario}
                   />
                   <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} disabled={bloquearFormulario} />
                   <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
@@ -694,47 +694,91 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
               maxWidth: 400,
               minWidth: 320,
-              width: '100%'
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 2
             }}>
-              <Box sx={{ position: 'relative', width: '370px', height: '430px' }}>
-                <DiagramaVehiculo
-                  neumaticosAsignados={neumaticosAsignados}
-                  layout="modal"
-                  onPosicionClick={handleSeleccionarNeumatico}
-                  onMantenimientoClick={() => {
-                    setOpenMantenimiento(true);
-                    onClose();
-                  }}
-                />
-                <img
-                  src="/assets/placa.png"
-                  alt="Placa"
-                  style={{
-                    width: '120px',
-                    height: '60px',
-                    objectFit: 'contain',
-                    position: 'absolute',
-                    top: '10px',
-                    right: '68px',
-                    zIndex: 2,
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '24px',
-                    right: '68px',
-                    zIndex: 3,
-                    color: 'black',
-                    padding: '2px 8px',
-                    borderRadius: '5px',
-                    fontFamily: 'Arial, sans-serif',
-                    fontWeight: 'bold',
-                    fontSize: '24px',
-                    textAlign: 'center',
-                  }}
-                >
-                  {placa}
+              {/* Contenedor horizontal: barra de botones a la izquierda y diagrama a la derecha */}
+              <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
+                {/* Barra de posiciones en columna */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mr: 3, mt: 2 }}>
+                  {neumaticosAsignados.map((n, idx) => {
+                    const inspeccionada = inspeccionesPendientes.some(i => i.posicion === n.POSICION);
+                    return (
+                      <Button
+                        key={n.POSICION}
+                        variant={formValues.posicion === n.POSICION ? 'contained' : 'outlined'}
+                        color={inspeccionada ? 'success' : 'primary'}
+                        size="medium"
+                        sx={{
+                          minWidth: 90,
+                          maxWidth: 180,
+                          px: 2,
+                          py: 1.2,
+                          fontWeight: 'bold',
+                          borderRadius: '16px',
+                          fontSize: 16,
+                          textTransform: 'none',
+                          boxShadow: formValues.posicion === n.POSICION ? 2 : 0,
+                          borderColor: '#bdbdbd',
+                          borderWidth: 1,
+                          borderStyle: 'solid',
+                          backgroundColor: formValues.posicion === n.POSICION ? '#f5f5f5' : undefined,
+                          color: '#222', // Letras negras
+                        }}
+                        onClick={() => handleSeleccionarNeumatico(n)}
+                      >
+                        {n.POSICION}
+                        {inspeccionada && (
+                          <span style={{ marginLeft: 6, fontSize: 18, color: '#388e3c' }}>✔</span>
+                        )}
+                      </Button>
+                    );
+                  })}
+                </Box>
+                {/* Diagrama y placa */}
+                <Box sx={{ position: 'relative', width: '234px', height: '430px' }}>
+                  <DiagramaVehiculo
+                    neumaticosAsignados={neumaticosAsignados}
+                    layout="modal"
+                    onPosicionClick={handleSeleccionarNeumatico}
+                    onMantenimientoClick={() => {
+                      setOpenMantenimiento(true);
+                      onClose();
+                    }}
+                  />
+                  <img
+                    src="/assets/placa.png"
+                    alt="Placa"
+                    style={{
+                      width: '120px',
+                      height: '60px',
+                      objectFit: 'contain',
+                      position: 'absolute',
+                      top: '10px',
+                      right: '68px',
+                      zIndex: 2,
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: '24px',
+                      right: '68px',
+                      zIndex: 3,
+                      color: 'black',
+                      padding: '2px 8px',
+                      borderRadius: '5px',
+                      fontFamily: 'Arial, sans-serif',
+                      fontWeight: 'bold',
+                      fontSize: '24px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {placa}
+                  </Box>
                 </Box>
               </Box>
             </Card>
