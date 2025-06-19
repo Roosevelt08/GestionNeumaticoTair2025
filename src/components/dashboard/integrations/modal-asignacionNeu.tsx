@@ -664,7 +664,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     <Typography variant="h6">Neumáticos Actuales</Typography>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <TextField
-                                            label="Kilometro"
+                                            label="Kilometraje"
                                             type="number"
                                             value={Odometro}
                                             onChange={(e) => {

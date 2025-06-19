@@ -17,7 +17,7 @@ import MuiAlert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import { useUser } from '@/hooks/use-user';
 
-import { obtenerUltimosMovimientosPorCodigo, registrarReubicacionNeumatico, registrarDesasignacionNeumatico } from '../../../api/Neumaticos';
+import { obtenerUltimosMovimientosPorCodigo, registrarReubicacionNeumatico, registrarDesasignacionNeumatico, obtenerUltimosMovimientosPorPlaca } from '../../../api/Neumaticos';
 import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 
 // Ampliar la interfaz para evitar errores de propiedades
@@ -135,11 +135,23 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         let costo = '', proveedor = '', fecha_compra = '', presion_aire = '', torque_aplicado = '', estado = '';
         // Buscar el último movimiento por código
         try {
-            const codigoBuscar = neumatico.CODIGO_NEU || neumatico.CODIGO;
-            if (codigoBuscar) {
-                const mov = await obtenerUltimosMovimientosPorCodigo(codigoBuscar);
-                if (mov && mov.length > 0) {
-                    const m = mov[0];
+            // Ahora se usa obtenerUltimosMovimientosPorPlaca en vez de obtenerUltimosMovimientosPorCodigo
+            const mov = await obtenerUltimosMovimientosPorPlaca(placa);
+            // Buscar el movimiento más reciente para el neumático seleccionado (por código)
+            if (mov && mov.length > 0) {
+                // Filtrar solo los movimientos de este neumático
+                const codigoBuscar = neumatico.CODIGO_NEU || neumatico.CODIGO;
+                const movimientosDeNeumatico = mov.filter((m: any) => (m.CODIGO_NEU || m.CODIGO) === codigoBuscar || m.CODIGO === codigoBuscar);
+                // Filtrar los que tengan fecha
+                const movimientosConFecha = movimientosDeNeumatico.filter((m: any) => m.FECHA_REGISTRO || m.FECHA_MOVIMIENTO);
+                if (movimientosConFecha.length > 0) {
+                    movimientosConFecha.sort((a: any, b: any) => {
+                        const fechaA = new Date(a.FECHA_REGISTRO || a.FECHA_MOVIMIENTO).getTime();
+                        const fechaB = new Date(b.FECHA_REGISTRO || b.FECHA_MOVIMIENTO).getTime();
+                        return fechaB - fechaA;
+                    });
+                    const m = movimientosConFecha[0];
+                    console.log('Movimiento más reciente (por placa):', m); // <-- LOG para depuración
                     if (m.KILOMETRO !== undefined && m.KILOMETRO !== null) {
                         ultimoKilometro = m.KILOMETRO.toString();
                     }
@@ -157,7 +169,8 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     torque_aplicado = m.TORQUE_APLICADO?.toString() || '';
                     estado = m.ESTADO || '';
                     // Guardar la fecha de la última inspección
-                    if (m.FECHA_REGISTRO) setFechaUltimaInspeccion(m.FECHA_REGISTRO);
+                    const ultimaFecha = m.FECHA_REGISTRO || m.FECHA_MOVIMIENTO;
+                    if (ultimaFecha) setFechaUltimaInspeccion(ultimaFecha);
                 }
             }
         } catch (e) {
@@ -395,7 +408,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     PROYECTO: vehiculo?.proyecto || '',
                     COSTO: fullNeu.COSTO,
                     PROVEEDOR: fullNeu.PROVEEDOR,
-                    FECHA_REGISTRO: fechaUltimaInspeccion || new Date().toISOString(),
+                    FECHA_REGISTRO: fechaUltimaInspeccion ? fechaUltimaInspeccion.slice(0, 10) : new Date().toISOString().slice(0, 10),
                     FECHA_COMPRA: fullNeu.FECHA_COMPRA,
                     USUARIO_SUPER: user?.usuario || user?.email || user?.nombre || '',
                     PRESION_AIRE: fullNeu.PRESION_AIRE,
@@ -408,7 +421,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
                     DESTINO: vehiculo?.proyecto || '',
                     FECHA_ASIGNACION: fechaAsignacionOriginal,
                     KILOMETRO: fullNeu.KILOMETRO,
-                    FECHA_MOVIMIENTO: fechaUltimaInspeccion || new Date().toISOString(),
+                    FECHA_MOVIMIENTO: ensureDateTime(fechaUltimaInspeccion) || new Date().toISOString(),
                     OBSERVACION: formValues.observacion,
                 });
             }
@@ -501,7 +514,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             DESTINO: vehiculo?.proyecto || '',
             FECHA_ASIGNACION: fechaUltimaInspeccion || new Date().toISOString().slice(0, 10),
             KILOMETRO: neumaticoSeleccionado.KILOMETRO,
-            FECHA_MOVIMIENTO: fechaUltimaInspeccion || new Date().toISOString(),
+            FECHA_MOVIMIENTO: ensureDateTime(fechaUltimaInspeccion) || new Date().toISOString(),
             OBSERVACION: formValues.observacion,
         };
         // LOG para depuración: ver el payload antes de enviarlo
@@ -563,6 +576,20 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+
+    // Utilidad para asegurar que una fecha tenga hora (si solo viene YYYY-MM-DD, agrega hora actual)
+    function ensureDateTime(fecha: string | undefined | null): string {
+        if (!fecha) return new Date().toISOString();
+        // Si ya tiene hora (T o espacio), retorna igual
+        if (fecha.includes('T') || fecha.trim().length > 10) return fecha;
+        // Si solo es fecha, agrega hora actual
+        const now = new Date();
+        const [y, m, d] = fecha.split('-');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
     }
 
     return (

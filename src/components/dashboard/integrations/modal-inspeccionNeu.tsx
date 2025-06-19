@@ -125,7 +125,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const [fechaAsignacionOriginal, setFechaAsignacionOriginal] = useState<string | null>(null);
 
   // Obtener la fecha de hoy en formato yyyy-mm-dd
-  const hoy = React.useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const hoy = React.useMemo(() => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    const localISO = new Date(now.getTime() - tzOffset).toISOString().slice(0, 10);
+    return localISO;
+  }, []);
 
   // Cargar datos de neu_asignado al abrir el modal o cuando cambie la placa
   React.useEffect(() => {
@@ -341,6 +346,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   // Guardar inspección localmente (no envía al backend)
   const handleGuardarInspeccionLocal = () => {
+    if (Odometro <= minKilometro) {
+      setSnackbar({ open: true, message: `El kilometro debe ser mayor al actual (${minKilometro.toLocaleString()} km).`, severity: 'error' });
+      return;
+    }
     if (kmError) {
       setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
       return;
@@ -725,7 +734,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                           borderColor: '#bdbdbd',
                           borderWidth: 1,
                           borderStyle: 'solid',
-                          backgroundColor: formValues.posicion === n.POSICION ? '#f5f5f5' : undefined,
+                          backgroundColor: formValues.posicion === n.POSICION ? '#165b52' : undefined,
                           color: '#222', // Letras negras
                         }}
                         onClick={() => handleSeleccionarNeumatico(n)}

@@ -657,7 +657,12 @@ export default function Page(): React.JSX.Element {
               </TableHead>
               <TableBody>
                 {neumaticosAsignadosUnicos.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO').length > 0 ? (
-                  neumaticosAsignadosUnicos.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO').map((neumatico: any, index: number) => (
+                  neumaticosAsignadosUnicos.filter(n => n.TIPO_MOVIMIENTO !== 'BAJA DEFINITIVA' && n.TIPO_MOVIMIENTO !== 'RECUPERADO').sort((a, b) => {
+                    // Ordenar por POSICION_NEU: POS01, POS02, POS03, POS04
+                    const posA = (a.POSICION_NEU || '').replace(/[^\d]/g, '');
+                    const posB = (b.POSICION_NEU || '').replace(/[^\d]/g, '');
+                    return Number(posA) - Number(posB);
+                  }).map((neumatico: any, index: number) => (
                     <TableRow key={neumatico.ID_MOVIMIENTO || `${neumatico.CODIGO}-${neumatico.POSICION_NEU}` }>
                       <TableCell align="center">{neumatico.POSICION_NEU}</TableCell>
                       <TableCell align="center">{neumatico.CODIGO}</TableCell>
