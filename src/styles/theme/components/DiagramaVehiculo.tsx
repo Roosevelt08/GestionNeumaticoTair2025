@@ -127,6 +127,37 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
             }
         }
     };
+    // Handler para click en desasignar con validación de inspección
+    const handleDesasignarClick = async () => {
+        const neu = neumaticosFiltrados[0];
+        if (!neu || !placa) {
+            setErrorMsg('No se puede validar inspección: falta neumático o placa');
+            return;
+        }
+        setErrorMsg(null);
+        const codigo = neu.CODIGO_NEU || neu.CODIGO;
+        const hoy = new Date();
+        const yyyy = hoy.getFullYear();
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        const fechaHoy = `${yyyy}-${mm}-${dd}`;
+        try {
+            const resp = await consultarInspeccionHoy({ codigo, placa, fecha: fechaHoy });
+            if (resp.existe) {
+                if (onDesasignarClick) onDesasignarClick();
+            } else {
+                let msg = 'Realiza una inspección, ya que la última inspección fue ';
+                msg += resp.ultima ? resp.ultima : 'NUNCA';
+                setErrorMsg(msg);
+            }
+        } catch (e) {
+            if (e instanceof Error) {
+                setErrorMsg('Error al consultar inspección: ' + e.message);
+            } else {
+                setErrorMsg('Error al consultar inspección: ' + String(e));
+            }
+        }
+    };
     return (
         <Box
             sx={
@@ -216,7 +247,7 @@ const DiagramaVehiculo: React.FC<DiagramaVehiculoProps & {
             {tipoModal === 'mantenimiento' && layout === 'modal' && fromMantenimientoModal && (
                 <>
                     <img src="/assets/rotar.png" alt="Reubicar" title="Reubicar" style={{ position: 'absolute', top: '280px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={handleRotarClick} />
-                    <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={onDesasignarClick} />
+                    <img src="/assets/desasignar.png" alt="Desasignar" title="Desasignar" style={{ position: 'absolute', top: '340px', left: '40px', width: '60px', height: '50px', zIndex: 2, objectFit: 'contain', cursor: 'pointer' }} onClick={handleDesasignarClick} />
                 </>
             )}
             {pos.map(({ key, top, left }) => (

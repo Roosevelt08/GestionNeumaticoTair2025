@@ -13,7 +13,7 @@ import MenuItem from '@mui/material/MenuItem';
 import DiagramaVehiculo from '../../../styles/theme/components/DiagramaVehiculo';
 import { useState, useContext, useEffect } from 'react';
 import ModalMantenimientoNeu from './modal-mantenimientoNeu';
-import { listarNeumaticosAsignados, guardarInspeccion, Neumaticos, obtenerUltimosMovimientosPorCodigo } from '../../../api/Neumaticos';
+import { consultarInspeccionHoy, listarNeumaticosAsignados, guardarInspeccion, Neumaticos, obtenerUltimosMovimientosPorCodigo } from '../../../api/Neumaticos';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import axios from 'axios';
@@ -40,6 +40,7 @@ type SnackbarSeverity = 'success' | 'error' | 'info';
 
 interface Neumatico {
   POSICION: string;
+  CODIGO: string;
 }
 
 interface Vehiculo {
@@ -164,15 +165,35 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
     }
   }, [open]);
 
-  // Verificar si ya existe inspección hoy al abrir el modal
+  // Verificar si ya existe inspección hoy al abrir el modal (por backend, para todos los neumáticos asignados)
   useEffect(() => {
-    if (open && placa) {
-      // Simulación solo frontend: mostrar alerta siempre que se abra el modal
-      setAlertaInspeccionHoy(true);
-      setBloquearFormulario(true);
-      // Si quieres que solo se muestre una vez por día, puedes guardar en localStorage con la fecha
+    if (open && placa && neumaticosAsignados && neumaticosAsignados.length > 0) {
+      const hoy = new Date().toISOString().slice(0, 10);
+      const verificarInspeccionHoy = async () => {
+        try {
+          // Consultar para todos los códigos asignados
+          const results = await Promise.all(
+            neumaticosAsignados.map(n => consultarInspeccionHoy({ codigo: n.CODIGO, placa, fecha: hoy }))
+          );
+          // Si alguna inspección existe hoy, mostrar advertencia
+          if (results.some(r => r && r.existe)) {
+            setAlertaInspeccionHoy(true);
+            setBloquearFormulario(true);
+            setInspeccionHoyRealizada(true);
+          } else {
+            setAlertaInspeccionHoy(false);
+            setBloquearFormulario(false);
+            setInspeccionHoyRealizada(false);
+          }
+        } catch (e) {
+          setAlertaInspeccionHoy(false);
+          setBloquearFormulario(false);
+          setInspeccionHoyRealizada(false);
+        }
+      };
+      verificarInspeccionHoy();
     }
-  }, [open, placa]);
+  }, [open, placa, neumaticosAsignados]);
 
   // 1. Agrega un estado fijo para el kilometraje mínimo permitido
   const [minKilometro, setMinKilometro] = useState(0);
@@ -346,10 +367,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
 
   // Guardar inspección localmente (no envía al backend)
   const handleGuardarInspeccionLocal = () => {
-    if (Odometro <= minKilometro) {
-      setSnackbar({ open: true, message: `El kilometro debe ser mayor al actual (${minKilometro.toLocaleString()} km).`, severity: 'error' });
-      return;
-    }
+    
     if (kmError) {
       setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
       return;
@@ -430,6 +448,10 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
   const handleEnviarYGuardar = async () => {
     if (kmError) {
       setSnackbar({ open: true, message: `El kilometro no puede ser menor a ${initialOdometro.toLocaleString()} km`, severity: 'error' });
+      return;
+    }
+    if (Odometro <= minKilometro) {
+      setSnackbar({ open: true, message: `El kilometro debe ser mayor al actual (${minKilometro.toLocaleString()} km).`, severity: 'error' });
       return;
     }
     if (inspeccionesPendientes.length !== 4) {
@@ -661,7 +683,9 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     size="small"
                     value={formValues.remanente}
                     onChange={e => {
-                      const value = e.target.value;
+                      const value = e.target.value.replace(/,/g, '.'); // Permitir punto decimal
+                      // Permitir solo números y hasta 2 decimales
+                      if (!/^\d*(\.?\d{0,2})?$/.test(value)) return;
                       setFormValues(prev => ({ ...prev, remanente: value }));
                       // Validar contra el remanente original Y el último remanente registrado
                       const valueNum = Number(value);
@@ -677,7 +701,11 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                         ? `Solo puedes ingresar un valor igual o menor al remanente original (${remanenteAsignacionReal ?? poNeumaticoSeleccionado?.REMANENTE ?? '-'}) y al último registrado (${remanenteUltimoMovimiento ?? '-'})`
                         : `Remanente original: ${remanenteAsignacionReal ?? poNeumaticoSeleccionado?.REMANENTE ?? '-'}`
                     }
-                    inputProps={{ style: { minWidth: `${formValues.remanente.length + 3}ch` } }}
+                    inputProps={{
+                      style: { minWidth: `${formValues.remanente.length + 3}ch` },
+                      inputMode: 'decimal',
+                      pattern: "^\\d*(\\.\\d{0,2})?$"
+                    }}
                     disabled={bloquearFormulario}
                   />
                   <TextField label="Presión de Aire (psi)" name="presion_aire" type="number" size="small" value={formValues.presion_aire ?? ''} onChange={handleInputChange} inputProps={{ min: 0, style: { minWidth: `${(formValues.presion_aire ?? '').toString().length + 3}ch` } }} disabled={bloquearFormulario} />
@@ -691,7 +719,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                     disabled={bloquearFormulario}
                   />
                   <TextField label="Estado" name="estado" size="small" value={porcentajeRemanente} inputProps={{ readOnly: true, style: { minWidth: `${porcentajeRemanente.length + 3}ch` } }} disabled={bloquearFormulario} />
-                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} inputProps={{ style: { minWidth: `${formValues.observacion.length + 3}ch` } }} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
+                  <TextField label="Observación" name="observacion" size="small" multiline minRows={2} value={formValues.observacion} onChange={handleInputChange} sx={{ gridColumn: 'span 2' }} disabled={bloquearFormulario} />
                 </Box>
               </Card>
             </Stack>
@@ -734,7 +762,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
                           borderColor: '#bdbdbd',
                           borderWidth: 1,
                           borderStyle: 'solid',
-                          backgroundColor: formValues.posicion === n.POSICION ? '#165b52' : undefined,
+                          backgroundColor: formValues.posicion === n.POSICION ? '#9299a5' : undefined,
                           color: '#222', // Letras negras
                         }}
                         onClick={() => handleSeleccionarNeumatico(n)}
@@ -827,7 +855,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               helperText={fechaInspeccionError || (fechaAsignacionOriginal ? `Solo fechas entre ${fechaAsignacionOriginal} y ${hoy}` : undefined)}
             />
             <TextField
-              label="Kilometro"
+              label="Kilometraje"
               type="number"
               value={Odometro}
               onChange={(e) => {

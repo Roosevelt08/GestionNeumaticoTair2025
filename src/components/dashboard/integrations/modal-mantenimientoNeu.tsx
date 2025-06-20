@@ -471,6 +471,13 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({
             setSnackbarOpen(true);
             return;
         }
+        // Validar que exista una fecha de inspección válida
+        if (!fechaUltimaInspeccion || isNaN(new Date(fechaUltimaInspeccion).getTime())) {
+            setSnackbarMsg('No se puede desasignar: primero debe existir una inspección válida para este neumático.');
+            setSnackbarSeverity('error');
+            setSnackbarOpen(true);
+            return;
+        }
         // Construir el payload
         // Usar la última posición conocida si la actual está vacía y solo si es válida (POS01, POS02, etc.)
         let posicionParaPayload = neumaticoSeleccionado.POSICION || ultimaPosicionDesasignada || posicionOriginal || '';

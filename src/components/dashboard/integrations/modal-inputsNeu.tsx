@@ -96,11 +96,16 @@ const ModalInputsNeu: React.FC<ModalInputsNeuProps> = ({ open, onClose, onSubmit
                         <TextField
                             label="Remanente"
                             type="number"
-                            value={Remanente}
-                            onChange={(e) => setRemanente(Number(e.target.value))}
+                            value={Remanente === 0 ? '' : Remanente}
+                            onChange={e => {
+                                let value = e.target.value.replace(/,/g, '.');
+                                // Permitir solo números y hasta 2 decimales
+                                if (!/^\d*(\.?\d{0,2})?$/.test(value)) return;
+                                setRemanente(value === '' ? 0 : parseFloat(value));
+                            }}
                             fullWidth
+                            inputProps={{ min: 0, step: '0.01', inputMode: 'decimal', pattern: "^\\d*(\\.\\d{0,2})?$" }}
                             InputProps={{
-                                inputProps: { min: 0 },
                                 sx: {
                                     'input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button': {
                                         WebkitAppearance: 'none',
