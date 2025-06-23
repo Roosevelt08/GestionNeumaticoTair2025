@@ -343,7 +343,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     }, [assignedNeumaticos]);
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(6);
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -528,16 +528,22 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             <Dialog
                 open={open}
                 onClose={handleDialogClose}
-                maxWidth="lg"
+                maxWidth="xl" // Cambiado de 'lg' a 'xl' para mayor ancho
                 fullWidth
                 disableEnforceFocus
                 disableAutoFocus
+                sx={{
+                    '& .MuiDialog-paper': {
+                        maxWidth: '1400px', // Ancho máximo personalizado
+                        width: '100%',
+                    },
+                }}
             >
                 <DialogContent>
                     <Stack direction="row" spacing={2}>
-                        <Card sx={{ flex: 0.5, p: 2, position: 'relative', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
+                        <Card sx={{ flex: 0.6, p: 2, position: 'relative', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                             <Box sx={{ position: 'relative', width: '100%', height: '370px' }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box sx={{ minWidth: 220, mr: 3, mt: 2 , display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <TextField
                                             label="Kilometraje"
                                             type="number"
@@ -592,11 +598,11 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     alt="Diagrama del Vehículo"
                                     style={{
                                         width: '256px',
-                                        height: '408px',
+                                        height: '380px',
                                         objectFit: 'contain',
                                         position: 'absolute',
                                         top: '-6px',
-                                        left: '115px',
+                                        left: '308px',
                                         zIndex: 1,
                                     }}
                                 />
@@ -753,7 +759,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                             </Card>
                         {/* </Card> */}
                         {/* Neumáticos Nuevos a la derecha */}
-                        <Stack direction="column" spacing={2} sx={{ flex: 1, width: '1px' }}>
+                        <Stack direction="column" spacing={2} sx={{ flex: 0.8, width: '1px' }}>
                             <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="h6">Neumáticos Nuevos</Typography>
@@ -879,7 +885,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     </Table>
                                 </TableContainer>
                                 <TablePagination
-                                    rowsPerPageOptions={[1, 10, 15]}
+                                    rowsPerPageOptions={[6, 12, 20]}
                                     component="div"
                                     count={filteredData.length}
                                     rowsPerPage={rowsPerPage}
