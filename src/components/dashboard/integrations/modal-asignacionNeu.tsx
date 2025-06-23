@@ -543,7 +543,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                     <Stack direction="row" spacing={2}>
                         <Card sx={{ flex: 0.6, p: 2, position: 'relative', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                             <Box sx={{ position: 'relative', width: '100%', height: '370px' }}>
-                                <Box sx={{ minWidth: 220, mr: 3, mt: 2 , display: 'flex', alignItems: 'center', gap: 2 }}>
+                                {/* <Box sx={{ minWidth: 220, mr: 3, mt: 2 , display: 'flex', alignItems: 'center', gap: 2 }}> */}
                                         <TextField
                                             label="Kilometraje"
                                             type="number"
@@ -587,12 +587,12 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                             }}
                                         >
                                             {Odometro === ''
-                                                ? `Ingrese el km actual (último ${initialOdometro.toLocaleString()} km)`
+                                                ? ` (último ${initialOdometro.toLocaleString()} km)`
                                                 : kmError
                                                     ? `No puede ser menor a ${initialOdometro.toLocaleString()} km`
-                                                    : `Kilometro actual: ${Number(Odometro).toLocaleString()} km`}
+                                                    : `Kilometraje actual: ${Number(Odometro).toLocaleString()} km`}
                                         </Typography>
-                                    </Box>
+                                    {/* </Box> */}
                                 <img
                                     src="/assets/car-diagram.png"
                                     alt="Diagrama del Vehículo"
@@ -683,8 +683,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         height: '70px',
                                         objectFit: 'contain',
                                         position: 'absolute',
-                                        top: '16px',
-                                        left: '10px',
+                                        top: '-8px',
+                                        left: '225px',
                                         zIndex: 1,
                                     }}
                                 />
@@ -692,8 +692,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     variant="h6"
                                     sx={{
                                         position: 'absolute',
-                                        top: '33px',
-                                        left: '70px',
+                                        top: '14px',
+                                        left: '284px',
                                         transform: 'translateX(-50%)',
                                         zIndex: 2,
                                         color: 'black',
@@ -762,13 +762,16 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                         <Stack direction="column" spacing={2} sx={{ flex: 0.4, width: '100%', height: '100%' }}>
                             <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="h6">Neumáticos Nuevos</Typography>
+                                    <Typography variant="h6">Neum. Disp.</Typography>
                                     <TextField
                                         label="Buscar por Neu."
                                         variant="outlined"
                                         sx={{ maxWidth: '200px' }}
                                         value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onChange={(e) => {
+                                            setSearchTerm(e.target.value);
+                                            setPage(0); // Resetear a la primera página al buscar
+                                        }}
                                     />
                                     <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', minWidth: 110 }}>
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976d2', fontSize: '1rem', background: '#e3f2fd', borderRadius: 2, px: 1.5, py: 0.5 }}>
