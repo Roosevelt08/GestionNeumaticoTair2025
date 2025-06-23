@@ -228,8 +228,8 @@ const DropZone: React.FC<DropZoneProps> = ({
             ref={ref}
             onContextMenu={handleContextMenu}
             style={{
-                width: '23px',
-                height: '57px',
+                width: '24px',
+                height: '59px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -244,7 +244,7 @@ const DropZone: React.FC<DropZoneProps> = ({
         >
             {/* Solo mostrar el neumático si no es baja ni recuperado */}
             {isAssigned && !esBajaORecuperado ? (
-                <span>
+                <span style={{ fontSize: '0.65rem', fontWeight: 600, color: '#1976d2', textAlign: 'center', lineHeight: 1 }}>
                     {assignedNeumaticos[position]?.CODIGO || '🛞'}
                 </span>
             ) : null}
@@ -764,12 +764,17 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="h6">Neumáticos Nuevos</Typography>
                                     <TextField
-                                        label="Buscar por Neumáticos"
+                                        label="Buscar por Neu."
                                         variant="outlined"
-                                        sx={{ maxWidth: '250px' }}
+                                        sx={{ maxWidth: '200px' }}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
+                                    <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', minWidth: 110 }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976d2', fontSize: '1rem', background: '#e3f2fd', borderRadius: 2, px: 1.5, py: 0.5 }}>
+                                            Asignados: {filteredData.length}
+                                        </Typography>
+                                    </Box>
                                     <Button
                                         variant="contained"
                                         color="primary"
