@@ -10,7 +10,6 @@ import {
     TableCell,
     TableContainer,
     TableHead,
-    TablePagination,
     TableRow,
     TextField,
     useTheme,
@@ -31,6 +30,7 @@ import { asignarNeumatico } from '../../../api/Neumaticos'; // Ajusta la ruta se
 import MuiAlert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Snackbar from '@mui/material/Snackbar';
+import TablePagination from '@mui/material/TablePagination';
 
 const ItemType = {
     NEUMATICO: 'neumatico',
@@ -228,8 +228,8 @@ const DropZone: React.FC<DropZoneProps> = ({
             ref={ref}
             onContextMenu={handleContextMenu}
             style={{
-                width: '32px',
-                height: '64px',
+                width: '23px',
+                height: '57px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -343,7 +343,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     }, [assignedNeumaticos]);
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(6);
+    const [rowsPerPage, setRowsPerPage] = useState(8);
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -610,8 +610,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                 <Box
                                     sx={{
                                         position: 'absolute',
-                                        top: '63px',
-                                        left: '281px',
+                                        top: '58px',
+                                        left: '474px',
                                         zIndex: 2,
                                     }}
                                 >
@@ -627,8 +627,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                 <Box
                                     sx={{
                                         position: 'absolute',
-                                        top: '63px',
-                                        left: '173px',
+                                        top: '58px',
+                                        left: '374px',
                                         zIndex: 2,
                                     }}
                                 >
@@ -644,8 +644,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                 <Box
                                     sx={{
                                         position: 'absolute',
-                                        top: '238px',
-                                        left: '281px',
+                                        top: '223px',
+                                        left: '474px',
                                         zIndex: 2,
                                     }}
                                 >
@@ -661,8 +661,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                 <Box
                                     sx={{
                                         position: 'absolute',
-                                        top: '239px',
-                                        left: '173px',
+                                        top: '223px',
+                                        left: '374px',
                                         zIndex: 2,
                                     }}
                                 >
@@ -719,12 +719,12 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     <Table>
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Posición</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Código</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Marca</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Medida</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Fecha Asignados</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Situación</TableCell>
+                                                <TableCell sx={{ fontWeight: 'bold', fontSize: '0.78rem' }}>Posición</TableCell>
+                                                <TableCell sx={{ fontWeight: 'bold', fontSize: '0.78rem' }}>Código</TableCell>
+                                                <TableCell sx={{ fontWeight: 'bold', fontSize: '0.78rem' }}>Marca</TableCell>
+                                                {/* <TableCell sx={{ fontWeight: 'bold', fontSize: '0.78rem' }}>Medida</TableCell> */}
+                                                <TableCell sx={{ fontWeight: 'bold', fontSize: '0.78rem' }}>Fecha Asig.</TableCell>
+                                                <TableCell sx={{ fontWeight: 'bold', fontSize: '0.78rem' }}>Situación</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -732,12 +732,12 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                                 const esBajaORecuperado = neumatico && (neumatico.TIPO_MOVIMIENTO === 'BAJA DEFINITIVA' || neumatico.TIPO_MOVIMIENTO === 'RECUPERADO');
                                                 return (
                                                     <TableRow key={position}>
-                                                        <TableCell>{position}</TableCell>
-                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.CODIGO || '----')}</TableCell>
-                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.MARCA || '----')}</TableCell>
-                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.MEDIDA || '----')}</TableCell>
-                                                        <TableCell>{esBajaORecuperado ? '----' : (neumatico?.FECHA_ASIGNACION || neumatico?.FECHA_REGISTRO || '----')}</TableCell>
-                                                        <TableCell>
+                                                        <TableCell sx={{ fontSize: '0.78rem' }}>{position}</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.78rem' }}>{esBajaORecuperado ? '----' : (neumatico?.CODIGO || '----')}</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.78rem' }}>{esBajaORecuperado ? '----' : (neumatico?.MARCA || '----')}</TableCell>
+                                                        {/* <TableCell sx={{ fontSize: '0.78rem' }}>{esBajaORecuperado ? '----' : (neumatico?.MEDIDA || '----')}</TableCell> */}
+                                                        <TableCell sx={{ fontSize: '0.78rem' }}>{esBajaORecuperado ? '----' : (neumatico?.FECHA_ASIGNACION || neumatico?.FECHA_REGISTRO || '----')}</TableCell>
+                                                        <TableCell sx={{ fontSize: '0.78rem' }}>
                                                             {esBajaORecuperado
                                                                 ? '----'
                                                                 : neumatico?.TIPO_MOVIMIENTO === 'ASIGNADO'
@@ -759,8 +759,8 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                             </Card>
                         {/* </Card> */}
                         {/* Neumáticos Nuevos a la derecha */}
-                        <Stack direction="column" spacing={2} sx={{ flex: 0.8, width: '1px' }}>
-                            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
+                        <Stack direction="column" spacing={2} sx={{ flex: 0.4, width: '100%', height: '100%' }}>
+                            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="h6">Neumáticos Nuevos</Typography>
                                     <TextField
@@ -779,120 +779,126 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         Confirmar Asignación
                                     </Button>
                                 </Box>
-                                <TableContainer component={Paper}>
-                                    <Table>
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell sx={{ width: '50px' }} />
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Código</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Marca</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Diseño</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Remanente</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Medida</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Fecha</TableCell>
-                                                <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {paginatedData.length > 0 ? (
-                                                paginatedData.map((neumatico) => {
-                                                    // 1️⃣ deshabilita si ya viene con TIPO_MOVIMIENTO = 'ASIGNADO'
-                                                    const isDisabled = neumatico.TIPO_MOVIMIENTO === 'ASIGNADO';
-
-                                                    return (
-                                                        <TableRow
-                                                            key={neumatico.CODIGO}
-                                                            sx={{
-                                                                backgroundColor: isDisabled
-                                                                    ? theme.palette.action.disabledBackground
-                                                                    : 'inherit',
-                                                                pointerEvents: isDisabled ? 'none' : 'auto',
-                                                                transition: 'box-shadow 0.2s, background 0.2s',
-                                                                '&:hover': !isDisabled
-                                                                    ? {
-                                                                        boxShadow: '0 2px 12px 0 #bdbdbd', // plomo claro
-                                                                        backgroundColor: '#f5f5f5', // fondo gris muy claro
-                                                                    }
-                                                                    : {},
-                                                            }}
-                                                        >
-                                                            {/* 2️⃣ arrastrable deshabilitado */}
-                                                            <TableCell>
-                                                                <DraggableNeumatico
-                                                                    neumatico={neumatico}
-                                                                    disabled={isDisabled}
-                                                                />
-                                                            </TableCell>
-
-                                                            {/* 3️⃣ resto de columnas */}
-                                                            <TableCell>{neumatico.CODIGO}</TableCell>
-                                                            <TableCell>{neumatico.MARCA}</TableCell>
-                                                            <TableCell>{neumatico.DISEÑO}</TableCell>
-                                                            <TableCell>{neumatico.REMANENTE}</TableCell>
-                                                            <TableCell>{neumatico.MEDIDA}</TableCell>
-                                                            <TableCell>{neumatico.FECHA_REGISTRO}</TableCell>
-
-                                                            {/* 4️⃣ indicador de Estado */}
-                                                            <TableCell align="center">
-                                                                <Box sx={{ position: 'relative', width: '100px' }}>
-                                                                    <LinearProgress
-                                                                        variant="determinate"
-                                                                        value={
-                                                                            typeof neumatico.ESTADO === 'string'
-                                                                                ? parseInt(neumatico.ESTADO.replace('%', ''), 10)
-                                                                                : neumatico.ESTADO
-                                                                        }
-                                                                        sx={{
-                                                                            height: 20,
-                                                                            borderRadius: 5,
-                                                                            '& .MuiLinearProgress-bar': {
-                                                                                backgroundColor: 'green',
-                                                                            },
-                                                                        }}
-                                                                    />
-                                                                    <Typography
-                                                                        variant="caption"
-                                                                        sx={{
-                                                                            position: 'absolute',
-                                                                            top: 0,
-                                                                            left: 0,
-                                                                            width: '100%',
-                                                                            height: '100%',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            color: 'white',
-                                                                            fontWeight: 'bold',
-                                                                        }}
-                                                                    >
-                                                                        {`${neumatico.ESTADO}%`}
-                                                                    </Typography>
-                                                                </Box>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })
-                                            ) : (
+                                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                    <TableContainer component={Paper} sx={{ flex: 1, minHeight: 0, maxHeight: '100%', maxWidth: '100%', minWidth: 0, mx: 0, overflowY: 'auto' }}>
+                                        <Table size="small" stickyHeader>
+                                            <TableHead>
                                                 <TableRow>
-                                                    <TableCell colSpan={8} align="center">
-                                                        No hay neumáticos disponibles.
-                                                    </TableCell>
+                                                    <TableCell sx={{ width: '50px', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }} />
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Código</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Marca</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Diseño</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Remanente</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Medida</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Fecha</TableCell>
+                                                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#fff', zIndex: 2, fontSize: '0.78rem' }}>Estado</TableCell>
                                                 </TableRow>
-                                            )}
-                                        </TableBody>
+                                            </TableHead>
+                                            <TableBody>
+                                                {paginatedData.length > 0 ? (
+                                                    paginatedData.map((neumatico) => {
+                                                        // 1️⃣ deshabilita si ya viene con TIPO_MOVIMIENTO = 'ASIGNADO'
+                                                        const isDisabled = neumatico.TIPO_MOVIMIENTO === 'ASIGNADO';
+
+                                                        return (
+                                                            <TableRow
+                                                                key={neumatico.CODIGO}
+                                                                sx={{
+                                                                    backgroundColor: isDisabled
+                                                                        ? theme.palette.action.disabledBackground
+                                                                        : 'inherit',
+                                                                    pointerEvents: isDisabled ? 'none' : 'auto',
+                                                                    transition: 'box-shadow 0.2s, background 0.2s',
+                                                                    '&:hover': !isDisabled
+                                                                        ? {
+                                                                            boxShadow: '0 2px 12px 0 #bdbdbd', // plomo claro
+                                                                            backgroundColor: '#f5f5f5', // fondo gris muy claro
+                                                                        }
+                                                                        : {},
+                                                                }}
+                                                            >
+                                                                {/* 2️⃣ arrastrable deshabilitado */}
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>
+                                                                    <DraggableNeumatico
+                                                                        neumatico={neumatico}
+                                                                        disabled={isDisabled}
+                                                                    />
+                                                                </TableCell>
+
+                                                                {/* 3️⃣ resto de columnas */}
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>{neumatico.CODIGO}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>{neumatico.MARCA}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>{neumatico.DISEÑO}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>{neumatico.REMANENTE}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>{neumatico.MEDIDA}</TableCell>
+                                                                <TableCell sx={{ fontSize: '0.78rem' }}>{neumatico.FECHA_REGISTRO}</TableCell>
+
+                                                                {/* 4️⃣ indicador de Estado */}
+                                                                <TableCell align="center" sx={{ fontSize: '0.78rem' }}>
+                                                                    <Box sx={{ position: 'relative', width: '100px' }}>
+                                                                        <LinearProgress
+                                                                            variant="determinate"
+                                                                            value={
+                                                                                typeof neumatico.ESTADO === 'string'
+                                                                                    ? parseInt(neumatico.ESTADO.replace('%', ''), 10)
+                                                                                    : neumatico.ESTADO
+                                                                            }
+                                                                            sx={{
+                                                                                height: 20,
+                                                                                borderRadius: 5,
+                                                                                '& .MuiLinearProgress-bar': {
+                                                                                    backgroundColor: 'green',
+                                                                                },
+                                                                            }}
+                                                                        />
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            sx={{
+                                                                                position: 'absolute',
+                                                                                top: 0,
+                                                                                left: 0,
+                                                                                width: '100%',
+                                                                                height: '100%',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                color: 'white',
+                                                                                fontWeight: 'bold',
+                                                                                fontSize: '0.78rem',
+                                                                            }}
+                                                                        >
+                                                                            {`${neumatico.ESTADO}%`}
+                                                                        </Typography>
+                                                                    </Box>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={8} align="center" sx={{ fontSize: '0.78rem' }}>
+                                                            No hay neumáticos disponibles.
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
 
 
-                                    </Table>
-                                </TableContainer>
-                                <TablePagination
-                                    rowsPerPageOptions={[6, 12, 20]}
-                                    component="div"
-                                    count={filteredData.length}
-                                    rowsPerPage={rowsPerPage}
-                                    page={page}
-                                    onPageChange={handleChangePage}
-                                    onRowsPerPageChange={handleChangeRowsPerPage}
-                                />
+                                        </Table>
+                                    </TableContainer>
+                                    <TablePagination
+                                        rowsPerPageOptions={[8, 16, 24]}
+                                        component="div"
+                                        count={filteredData.length}
+                                        rowsPerPage={rowsPerPage}
+                                        page={page}
+                                        onPageChange={(_, newPage) => setPage(newPage)}
+                                        onRowsPerPageChange={(e) => {
+                                            setRowsPerPage(parseInt(e.target.value, 10));
+                                            setPage(0);
+                                        }}
+                                    />
+                                </Box>
                             </Card>
                         </Stack>
                     </Stack>
