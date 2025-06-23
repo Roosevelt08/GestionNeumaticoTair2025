@@ -228,13 +228,13 @@ const DropZone: React.FC<DropZoneProps> = ({
             ref={ref}
             onContextMenu={handleContextMenu}
             style={{
-                width: '45px',
-                height: '97px',
+                width: '32px',
+                height: '64px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 backgroundColor: isAssigned && !esBajaORecuperado ? 'lightgreen' : 'transparent',
-                borderRadius: '20px',
+                borderRadius: '11px',
                 border: 'none',
                 pointerEvents: 'all',
                 cursor: isAssigned && !esBajaORecuperado ? 'pointer' : 'default',
@@ -343,7 +343,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
     }, [assignedNeumaticos]);
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(5);
+    const [rowsPerPage, setRowsPerPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleChangePage = (event: unknown, newPage: number) => {
@@ -528,141 +528,16 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
             <Dialog
                 open={open}
                 onClose={handleDialogClose}
-                maxWidth="xl"
+                maxWidth="lg"
                 fullWidth
                 disableEnforceFocus
                 disableAutoFocus
             >
                 <DialogContent>
                     <Stack direction="row" spacing={2}>
-
                         <Card sx={{ flex: 0.5, p: 2, position: 'relative', boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-                            {/* <Typography variant="h6" sx={{ mb: 2 }}>
-                                Información del Vehículo
-                            </Typography> */}
-                            <Box sx={{ position: 'relative', width: '100%', height: '650px' }}>
-                                <img
-                                    src="/assets/car-diagram.png"
-                                    alt="Diagrama del Vehículo"
-                                    style={{
-                                        width: '420px',
-                                        height: '650px',
-                                        objectFit: 'contain',
-                                        position: 'absolute',
-                                        top: '10px',
-                                        left: '12px',
-                                        zIndex: 1,
-                                    }}
-                                />
-                                {/* DropZones */}
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: '120px',
-                                        left: '285px',
-                                        zIndex: 2,
-                                    }}
-                                >
-                                    <DropZone
-                                        position="POS01"
-                                        onDrop={(neumatico) => handleDrop('POS01', neumatico)}
-                                        isAssigned={!!assignedNeumaticos.POS01}
-                                        assignedNeumaticos={assignedNeumaticos}
-                                        setAssignedNeumaticos={setAssignedNeumaticos}
-                                        kilometro={kilometro}
-                                    />
-                                </Box>
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: '120px',
-                                        left: '113px',
-                                        zIndex: 2,
-                                    }}
-                                >
-                                    <DropZone
-                                        position="POS02"
-                                        onDrop={(neumatico) => handleDrop('POS02', neumatico)}
-                                        isAssigned={!!assignedNeumaticos.POS02}
-                                        assignedNeumaticos={assignedNeumaticos}
-                                        setAssignedNeumaticos={setAssignedNeumaticos}
-                                        kilometro={kilometro}
-                                    />
-                                </Box>
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: '402px',
-                                        left: '285px',
-                                        zIndex: 2,
-                                    }}
-                                >
-                                    <DropZone
-                                        position="POS03"
-                                        onDrop={(neumatico) => handleDrop('POS03', neumatico)}
-                                        isAssigned={!!assignedNeumaticos.POS03}
-                                        assignedNeumaticos={assignedNeumaticos}
-                                        setAssignedNeumaticos={setAssignedNeumaticos}
-                                        kilometro={kilometro}
-                                    />
-                                </Box>
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: '402px',
-                                        left: '114px',
-                                        zIndex: 2,
-                                    }}
-                                >
-                                    <DropZone
-                                        position="POS04"
-                                        onDrop={(neumatico) => handleDrop('POS04', neumatico)}
-                                        isAssigned={!!assignedNeumaticos.POS04}
-                                        assignedNeumaticos={assignedNeumaticos}
-                                        setAssignedNeumaticos={setAssignedNeumaticos}
-                                        kilometro={kilometro}
-                                    />
-                                </Box>
-                                <img
-                                    src="/assets/placa.png"
-                                    alt="Placa"
-                                    style={{
-                                        width: '420px',
-                                        height: '100px',
-                                        objectFit: 'contain',
-                                        position: 'absolute',
-                                        top: '670px',
-                                        left: '12px',
-                                        zIndex: 1,
-                                    }}
-                                />
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        position: 'absolute',
-                                        top: '700px',
-                                        left: '220px',
-                                        transform: 'translateX(-50%)',
-                                        zIndex: 2,
-                                        color: 'black',
-                                        padding: '5px 10px',
-                                        borderRadius: '5px',
-                                        fontFamily: 'Arial, sans-serif',
-                                        fontWeight: 'bold',
-                                        fontSize: '40px',
-                                        textAlign: 'center',
-
-                                    }}>
-                                    {placa}
-                                </Typography>
-                            </Box>
-                        </Card>
-                        {/* Neumáticos Actuales y Neumáticos Nuevos */}
-                        <Stack direction="column" spacing={2} sx={{ flex: 1, width: '1px' }}>
-                            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="h6">Neumáticos Actuales</Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{ position: 'relative', width: '100%', height: '370px' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <TextField
                                             label="Kilometraje"
                                             type="number"
@@ -712,17 +587,127 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                                     : `Kilometro actual: ${Number(Odometro).toLocaleString()} km`}
                                         </Typography>
                                     </Box>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        disabled={!hasAssignedNeumaticos || !allPositionsAssigned || kmError || Odometro === '' || isNaN(Number(Odometro))}
-                                        onClick={handleConfirm}
-                                    >
-                                        Confirmar Asignación
-                                    </Button>
+                                <img
+                                    src="/assets/car-diagram.png"
+                                    alt="Diagrama del Vehículo"
+                                    style={{
+                                        width: '256px',
+                                        height: '408px',
+                                        objectFit: 'contain',
+                                        position: 'absolute',
+                                        top: '-6px',
+                                        left: '115px',
+                                        zIndex: 1,
+                                    }}
+                                />
+                                {/* DropZones */}
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '63px',
+                                        left: '281px',
+                                        zIndex: 2,
+                                    }}
+                                >
+                                    <DropZone
+                                        position="POS01"
+                                        onDrop={(neumatico) => handleDrop('POS01', neumatico)}
+                                        isAssigned={!!assignedNeumaticos.POS01}
+                                        assignedNeumaticos={assignedNeumaticos}
+                                        setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
+                                    />
+                                </Box>
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '63px',
+                                        left: '173px',
+                                        zIndex: 2,
+                                    }}
+                                >
+                                    <DropZone
+                                        position="POS02"
+                                        onDrop={(neumatico) => handleDrop('POS02', neumatico)}
+                                        isAssigned={!!assignedNeumaticos.POS02}
+                                        assignedNeumaticos={assignedNeumaticos}
+                                        setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
+                                    />
+                                </Box>
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '238px',
+                                        left: '281px',
+                                        zIndex: 2,
+                                    }}
+                                >
+                                    <DropZone
+                                        position="POS03"
+                                        onDrop={(neumatico) => handleDrop('POS03', neumatico)}
+                                        isAssigned={!!assignedNeumaticos.POS03}
+                                        assignedNeumaticos={assignedNeumaticos}
+                                        setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
+                                    />
+                                </Box>
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '239px',
+                                        left: '173px',
+                                        zIndex: 2,
+                                    }}
+                                >
+                                    <DropZone
+                                        position="POS04"
+                                        onDrop={(neumatico) => handleDrop('POS04', neumatico)}
+                                        isAssigned={!!assignedNeumaticos.POS04}
+                                        assignedNeumaticos={assignedNeumaticos}
+                                        setAssignedNeumaticos={setAssignedNeumaticos}
+                                        kilometro={kilometro}
+                                    />
+                                </Box>
+                                <img
+                                    src="/assets/placa.png"
+                                    alt="Placa"
+                                    style={{
+                                        width: '120px',
+                                        height: '70px',
+                                        objectFit: 'contain',
+                                        position: 'absolute',
+                                        top: '16px',
+                                        left: '10px',
+                                        zIndex: 1,
+                                    }}
+                                />
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        position: 'absolute',
+                                        top: '33px',
+                                        left: '70px',
+                                        transform: 'translateX(-50%)',
+                                        zIndex: 2,
+                                        color: 'black',
+                                        padding: '3px 2px',
+                                        borderRadius: '5px',
+                                        fontFamily: 'Arial, sans-serif',
+                                        fontWeight: 'bold',
+                                        fontSize: '25px',
+                                        textAlign: 'center',
 
-
-
+                                    }}>
+                                    {placa}
+                                </Typography>
+                            </Box>
+                            {/* Tabla de Neumáticos Actuales debajo del diagrama */}
+                            {/* <Card sx={{ mt: 4, boxShadow: '0px 2px 6px rgba(0,0,0,0.08)' }}> */}
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 2 }}>
+                                    <Typography variant="h6">Neumáticos Actuales</Typography>
+                                    
+                                    
                                 </Box>
                                 <TableContainer component={Paper}>
                                     <Table>
@@ -766,7 +751,10 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     </Table>
                                 </TableContainer>
                             </Card>
-                            <Card sx={{ p: 2 }}>
+                        {/* </Card> */}
+                        {/* Neumáticos Nuevos a la derecha */}
+                        <Stack direction="column" spacing={2} sx={{ flex: 1, width: '1px' }}>
+                            <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="h6">Neumáticos Nuevos</Typography>
                                     <TextField
@@ -776,6 +764,14 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        disabled={!hasAssignedNeumaticos || !allPositionsAssigned || kmError || Odometro === '' || isNaN(Number(Odometro))}
+                                        onClick={handleConfirm}
+                                    >
+                                        Confirmar Asignación
+                                    </Button>
                                 </Box>
                                 <TableContainer component={Paper}>
                                     <Table>
@@ -883,7 +879,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     </Table>
                                 </TableContainer>
                                 <TablePagination
-                                    rowsPerPageOptions={[5, 10, 15]}
+                                    rowsPerPageOptions={[1, 10, 15]}
                                     component="div"
                                     count={filteredData.length}
                                     rowsPerPage={rowsPerPage}
