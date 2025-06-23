@@ -41,6 +41,7 @@ type SnackbarSeverity = 'success' | 'error' | 'info';
 interface Neumatico {
   POSICION: string;
   CODIGO: string;
+  FECHA_MOVIMIENTO?: string;
 }
 
 interface Vehiculo {
@@ -512,7 +513,7 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
         PRESION_AIRE: ins.presion_aire ? parseFloat(ins.presion_aire) : null,
         PROVEEDOR: poNeu?.PROVEEDOR ?? null,
         PROYECTO: vehiculo?.proyecto ?? null,
-        REMANENTE: ins.remanente ? parseInt(ins.remanente) : null,
+        REMANENTE: ins.remanente ? parseFloat(ins.remanente) : null,
         RQ: poNeu?.RQ ?? null,
         TIPO_MOVIMIENTO: ins.tipo_movimiento ?? null,
         TORQUE_APLICADO: ins.torque ? parseFloat(ins.torque) : null,
@@ -741,11 +742,12 @@ const ModalInpeccionNeu: React.FC<ModalInpeccionNeuProps> = ({ open, onClose, pl
               <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', width: '100%' }}>
                 {/* Barra de posiciones en columna */}
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, mr: 3, mt: 2 }}>
-                  {neumaticosAsignados.map((n, idx) => {
+                  {/* Filtrar para mostrar solo una vez cada posición */}
+                  {Array.from(new Map(neumaticosAsignados.map(n => [n.POSICION, n])).values()).map((n, idx) => {
                     const inspeccionada = inspeccionesPendientes.some(i => i.posicion === n.POSICION);
                     return (
                       <Button
-                        key={n.POSICION}
+                        key={`${n.POSICION}-${n.CODIGO}-${n.FECHA_MOVIMIENTO || idx}`}
                         variant={formValues.posicion === n.POSICION ? 'contained' : 'outlined'}
                         color={inspeccionada ? 'success' : 'primary'}
                         size="medium"
