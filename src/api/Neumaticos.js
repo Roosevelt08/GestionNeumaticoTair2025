@@ -206,3 +206,21 @@ export const consultarInspeccionHoy = async ({ codigo, placa, fecha }) => {
   }
 };
 
+// Obtener la cantidad de neumáticos disponibles por mes (para el gráfico)
+export const obtenerNeumaticosDisponiblesPorMes = async (usuario) => {
+  const response = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/po-reportes/disponibles-por-mes`,
+    { params: { usuario }, withCredentials: true }
+  );
+  return response.data;
+};
+
+// Obtener la cantidad de neumáticos asignados por mes (para el gráfico)
+export const obtenerNeumaticosAsignadosPorMes = async (usuario) => {
+  const response = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/po-reportes/asignados-por-mes`,
+    { params: { usuario }, withCredentials: true }
+  );
+  return response.data;
+};
+

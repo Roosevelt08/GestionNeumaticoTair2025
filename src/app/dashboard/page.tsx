@@ -6,11 +6,11 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 
 import { config } from '@/config';
-import { obtenerCantidadNeumaticos } from '@/api/Neumaticos';
-import { Budget } from '@/components/dashboard/overview/budget';
+import { obtenerCantidadNeumaticos, obtenerCantidadNeumaticosDisponibles, obtenerCantidadNeumaticosAsignados } from '@/api/Neumaticos';
+import { Budget } from '@/components/dashboard/overview/cantidadNeu';
 import { Sales } from '@/components/dashboard/overview/sales';
-import { TasksProgress } from '@/components/dashboard/overview/tasks-progress';
-import { TotalCustomers } from '@/components/dashboard/overview/total-customers';
+import { TasksProgress } from '@/components/dashboard/overview/cantidadNeuAsig';
+import { TotalCustomers } from '@/components/dashboard/overview/cantidadNeuDisp';
 import { TotalProfit } from '@/components/dashboard/overview/total-profit';
 import { Traffic } from '@/components/dashboard/overview/traffic';
 
@@ -18,11 +18,19 @@ import { Traffic } from '@/components/dashboard/overview/traffic';
 
 export default function Page(): React.JSX.Element {
   const [cantidadNeumaticos, setCantidadNeumaticos] = useState<string | number>('...');
+  const [cantidadDisponibles, setCantidadDisponibles] = useState<string | number>('...');
+  const [cantidadAsignados, setCantidadAsignados] = useState<string | number>('...');
 
   useEffect(() => {
     obtenerCantidadNeumaticos()
       .then((cantidad) => setCantidadNeumaticos(cantidad))
       .catch(() => setCantidadNeumaticos('Error'));
+    obtenerCantidadNeumaticosDisponibles()
+      .then((cantidad) => setCantidadDisponibles(cantidad))
+      .catch(() => setCantidadDisponibles('Error'));
+    obtenerCantidadNeumaticosAsignados()
+      .then((cantidad) => setCantidadAsignados(cantidad))
+      .catch(() => setCantidadAsignados('Error'));
   }, []);
 
   return (
@@ -31,10 +39,10 @@ export default function Page(): React.JSX.Element {
         <Budget diff={12} trend="up" sx={{ height: '100%' }} value={cantidadNeumaticos.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TotalCustomers diff={16} trend="down" sx={{ height: '100%' }} value="1.6k" />
+        <TotalCustomers diff={16} trend="down" sx={{ height: '100%' }} value={cantidadDisponibles.toString()} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
-        <TasksProgress sx={{ height: '100%' }} value={75.5} />
+        <TasksProgress sx={{ height: '100%' }} value={Number(cantidadAsignados)} />
       </Grid>
       <Grid lg={3} sm={6} xs={12}>
         <TotalProfit sx={{ height: '100%' }} value="$15k" />

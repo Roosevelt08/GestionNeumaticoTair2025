@@ -31,9 +31,9 @@ export function Budget({ diff, trend, sx, value }: BudgetProps): React.JSX.Eleme
               </Typography>
               <Typography variant="h4">{value}</Typography>
             </Stack>
-            <Avatar sx={{ backgroundColor: '#C8F7C5', height: '56px', width: '56px' }}>
-              <img src="/assets/llantas.png" alt="Neumático" style={{ width: 40, height: 40 }} />
-            </Avatar>
+            <Stack sx={{ position: 'relative', width: 75, height: 75 }}>
+              <img src="/assets/cantidad.png" alt="Neumático" style={{ width: 115, height: 115, position: 'absolute', top: -13, left: -25, zIndex: 1, opacity: 1 }} />
+            </Stack>
           </Stack>
           {/* {diff ? (
             // <Stack sx={{ alignItems: 'center' }} direction="row" spacing={2}>

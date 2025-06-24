@@ -711,7 +711,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                             {/* Tabla de Neumáticos Actuales debajo del diagrama */}
                             {/* <Card sx={{ mt: 4, boxShadow: '0px 2px 6px rgba(0,0,0,0.08)' }}> */}
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 2 }}>
-                                    <Typography variant="h6">Neumáticos Actuales</Typography>
+                                    <Typography variant="h6">Neumáticos Instalados</Typography>
                                     
                                     
                                 </Box>
@@ -762,7 +762,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                         <Stack direction="column" spacing={2} sx={{ flex: 0.4, width: '100%', height: '100%' }}>
                             <Card sx={{ p: 2, boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="h6">Neum. Disp.</Typography>
+                                   
                                     <TextField
                                         label="Buscar por Neu."
                                         variant="outlined"
@@ -775,7 +775,7 @@ const ModalAsignacionNeu: React.FC<ModalAsignacionNeuProps> = ({ open, onClose, 
                                     />
                                     <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', minWidth: 110 }}>
                                         <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976d2', fontSize: '1rem', background: '#e3f2fd', borderRadius: 2, px: 1.5, py: 0.5 }}>
-                                            Asignados: {filteredData.length}
+                                            Neu. Disponibles: {filteredData.length}
                                         </Typography>
                                     </Box>
                                     <Button
