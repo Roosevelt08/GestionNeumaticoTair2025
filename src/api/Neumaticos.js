@@ -224,3 +224,12 @@ export const obtenerNeumaticosAsignadosPorMes = async (usuario) => {
   return response.data;
 };
 
+// Obtener inspecciones de neumáticos por rango de fechas y usuario
+export const obtenerInspeccionesNeumaticosPorFechas = async ({ usuario, fechaInicio, fechaFin }) => {
+  const response = await axios.get(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/po-reportes/neu-inspeccion-por-fechas`,
+    { params: { usuario, fechaInicio, fechaFin }, withCredentials: true }
+  );
+  return response.data;
+};
+

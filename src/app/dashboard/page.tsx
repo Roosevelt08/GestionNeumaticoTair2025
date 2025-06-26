@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { config } from '@/config';
 import { obtenerCantidadNeumaticos, obtenerCantidadNeumaticosDisponibles, obtenerCantidadNeumaticosAsignados } from '@/api/Neumaticos';
 import { Budget } from '@/components/dashboard/overview/cantidadNeu';
-import { Sales } from '@/components/dashboard/overview/sales';
+import { Sales } from '@/components/dashboard/overview/inspeccionNeu';
 import { TasksProgress } from '@/components/dashboard/overview/cantidadNeuAsig';
 import { TotalCustomers } from '@/components/dashboard/overview/cantidadNeuDisp';
 import { TotalProfit } from '@/components/dashboard/overview/total-profit';

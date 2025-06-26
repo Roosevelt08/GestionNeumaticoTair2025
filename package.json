@@ -34,6 +34,7 @@
     "@mui/system": "5.15.20",
     "@mui/utils": "5.15.20",
     "@mui/x-date-pickers": "7.7.1",
+    "@mui/x-date-pickers-pro": "^8.5.3",
     "@phosphor-icons/react": "2.1.6",
     "@swc/helpers": "^0.5.17",
     "apexcharts": "3.49.2",

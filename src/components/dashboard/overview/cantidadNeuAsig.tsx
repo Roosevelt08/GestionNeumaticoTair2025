@@ -1,12 +1,9 @@
 import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import LinearProgress from '@mui/material/LinearProgress';
 import Stack from '@mui/material/Stack';
 import type { SxProps } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { ListBullets as ListBulletsIcon } from '@phosphor-icons/react/dist/ssr/ListBullets';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { obtenerNeumaticosAsignadosPorMes } from '../../../api/Neumaticos';
 import { useUser } from '@/hooks/use-user';
@@ -49,12 +46,12 @@ export function TasksProgress({ value, sx }: TasksProgressProps): React.JSX.Elem
           <Stack direction="row" sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }} spacing={3}>
             <Stack spacing={1}>
               <Typography color="text.secondary" gutterBottom variant="overline">
-                Cantidad de neumáticos asignados
+                neumáticos asignados
               </Typography>
               <Typography variant="h4">{value}</Typography>
             </Stack>
             <Stack sx={{ position: 'relative', width: 75, height: 75 }}>
-              <img src="/assets/asignados.png" alt="Neumático Asignado" style={{ width: 115, height: 115, position: 'absolute', top: -13, left: -25, zIndex: 1, opacity: 1 }} />
+              <img src="/assets/asignados.png" alt="Neumático Asignado" style={{ width: 115, height: 115, position: 'absolute', top: -28, left: -25, zIndex: 1, opacity: 1 }} />
             </Stack>
           </Stack>
           <div style={{ width: '100%', height: 60 }}>
@@ -64,7 +61,7 @@ export function TasksProgress({ value, sx }: TasksProgressProps): React.JSX.Elem
                 <XAxis dataKey="fecha" hide />
                 <YAxis hide />
                 <Tooltip />
-                <Line type="basis" dataKey="cantidad" stroke="#8884d8" strokeWidth={2} dot />
+                <Line type="monotone" dataKey="cantidad" stroke="#8884d8" strokeWidth={2} dot />
               </LineChart>
             </ResponsiveContainer>
           </div>

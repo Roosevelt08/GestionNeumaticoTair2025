@@ -12,8 +12,11 @@ import type { SxProps } from '@mui/material/styles';
 import { ArrowClockwise as ArrowClockwiseIcon } from '@phosphor-icons/react/dist/ssr/ArrowClockwise';
 import { ArrowRight as ArrowRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowRight';
 import type { ApexOptions } from 'apexcharts';
+import dayjs from 'dayjs';
 
 import { Chart } from '@/components/core/chart';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 export interface SalesProps {
   chartSeries: { name: string; data: number[] }[];
@@ -22,16 +25,33 @@ export interface SalesProps {
 
 export function Sales({ chartSeries, sx }: SalesProps): React.JSX.Element {
   const chartOptions = useChartOptions();
+  const [startDate, setStartDate] = React.useState<dayjs.Dayjs | null>(null);
+  const [endDate, setEndDate] = React.useState<dayjs.Dayjs | null>(null);
 
   return (
     <Card sx={sx}>
       <CardHeader
         action={
-          <Button color="inherit" size="small" startIcon={<ArrowClockwiseIcon fontSize="var(--icon-fontSize-md)" />}>
-            Sync
-          </Button>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <DatePicker
+                label="Inicio"
+                value={startDate}
+                onChange={setStartDate}
+                slotProps={{ textField: { size: 'small', variant: 'outlined' } }}
+              />
+              <span style={{ alignSelf: 'center' }}>-</span>
+              <DatePicker
+                label="Fin"
+                value={endDate}
+                onChange={setEndDate}
+                slotProps={{ textField: { size: 'small', variant: 'outlined' } }}
+                minDate={startDate ?? undefined}
+              />
+            </div>
+          </LocalizationProvider>
         }
-        title="Sales"
+        title="Inspecciones por Neumático"
       />
       <CardContent>
         <Chart height={350} options={chartOptions} series={chartSeries} type="bar" width="100%" />
