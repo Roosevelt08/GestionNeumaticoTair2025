@@ -13,26 +13,132 @@ import { ArrowClockwise as ArrowClockwiseIcon } from '@phosphor-icons/react/dist
 import { ArrowRight as ArrowRightIcon } from '@phosphor-icons/react/dist/ssr/ArrowRight';
 import type { ApexOptions } from 'apexcharts';
 import dayjs from 'dayjs';
+import 'dayjs/locale/es';
 
 import { Chart } from '@/components/core/chart';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { obtenerInspeccionesNeumaticosPorFechas } from '@/api/Neumaticos';
+import { useUser } from '@/hooks/use-user';
+
+// Agregar declaración global para window.placasPorBarra
+declare global {
+  interface Window {
+    placasPorBarra?: string[];
+    kilometrosPorBarra?: string[];
+  }
+}
 
 export interface SalesProps {
-  chartSeries: { name: string; data: number[] }[];
+  chartSeries?: { name: string; data: number[] }[];
   sx?: SxProps;
 }
 
-export function Sales({ chartSeries, sx }: SalesProps): React.JSX.Element {
+export function Sales({ chartSeries: _chartSeries, sx }: SalesProps): React.JSX.Element {
   const chartOptions = useChartOptions();
-  const [startDate, setStartDate] = React.useState<dayjs.Dayjs | null>(null);
-  const [endDate, setEndDate] = React.useState<dayjs.Dayjs | null>(null);
+  const { user } = useUser();
+  const [startDate, setStartDate] = React.useState<dayjs.Dayjs | null>(dayjs().subtract(3, 'month'));
+  const [endDate, setEndDate] = React.useState<dayjs.Dayjs | null>(dayjs());
+  const [chartSeries, setChartSeries] = React.useState<{ name: string; data: number[] }[]>([]);
+  const [categories, setCategories] = React.useState<string[]>([]);
+  const [plotlyData, setPlotlyData] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    if (startDate && endDate && user?.usuario) {
+      const fetchData = async () => {
+        try {
+          const data = await obtenerInspeccionesNeumaticosPorFechas({
+            usuario: user.usuario,
+            fechaInicio: startDate.format('YYYY-MM-DD'),
+            fechaFin: endDate.format('YYYY-MM-DD'),
+          });
+          console.log('Datos inspecciones backend (crudo):', JSON.stringify(data, null, 2));
+          // Agrupar por FECHA_REGISTRO
+          const groupByFecha: Record<string, any[]> = {};
+          data.forEach((item: any) => {
+            if (!groupByFecha[item.FECHA_REGISTRO]) groupByFecha[item.FECHA_REGISTRO] = [];
+            groupByFecha[item.FECHA_REGISTRO].push(item);
+          });
+          // Ordenar fechas
+          const fechas = Object.keys(groupByFecha).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+          // Obtener todas las placas únicas por fecha (manteniendo el orden)
+          const placasPorFecha: Record<string, string[]> = {};
+          fechas.forEach(fecha => {
+            placasPorFecha[fecha] = Array.from(new Set(groupByFecha[fecha].map((item: any) => item.PLACA.trim())));
+          });
+          // Construir categorías: para cada fecha, una barra por cada placa
+          const xCategories: string[] = [];
+          fechas.forEach(fecha => {
+            placasPorFecha[fecha].forEach(placa => {
+              xCategories.push(`${fecha}|${placa}`);
+            });
+          });
+          // Todas las combinaciones de POSICION_NEU + CODIGO
+          const allSeriesKeys = Array.from(
+            new Set(
+              data.map((item: any) => `${item.POSICION_NEU} - ${item.CODIGO}`)
+            )
+          ) as string[];
+          // Construir series: para cada serie, un valor por cada (fecha, placa)
+          const series = allSeriesKeys.map((serieKey) => ({
+            name: serieKey,
+            data: xCategories.map((cat) => {
+              const [fecha, placa] = cat.split('|');
+              const found = groupByFecha[fecha]?.find(
+                (item: any) => item.PLACA.trim() === placa && `${item.POSICION_NEU} - ${item.CODIGO}` === serieKey
+              );
+              return found ? found.REMANENTE : 0;
+            }),
+          }));
+          // Las categorías serán solo la fecha (sin placa)
+          const displayCategories = xCategories.map(cat => {
+            const [fecha] = cat.split('|');
+            return fecha;
+          });
+          // Guardar también las placas en el mismo orden de las barras
+          const placasPorBarra = xCategories.map(cat => {
+            const [, placa] = cat.split('|');
+            return placa;
+          });
+          // Guardar también los kilometrajes en el mismo orden de las barras
+          const kilometrosPorBarra = xCategories.map(cat => {
+            const [fecha, placa] = cat.split('|');
+            // Busca el primer registro de esa placa en esa fecha
+            const all = groupByFecha[fecha]?.filter((item: any) => item.PLACA.trim() === placa && item.KILOMETRO !== undefined && item.KILOMETRO !== null);
+            if (!all || all.length === 0) return '';
+            // Si todos los kilometros son 0, mostrar vacío
+            const maxKm = Math.max(...all.map((item: any) => Number(item.KILOMETRO) || 0));
+            return maxKm > 0 ? maxKm.toLocaleString() : all[0].KILOMETRO.toString();
+          });
+          setCategories(displayCategories);
+          setChartSeries(series);
+          // Guardar placas y kilometrajes para usarlas en el overlay
+          (window as any).placasPorBarra = placasPorBarra;
+          (window as any).kilometrosPorBarra = kilometrosPorBarra;
+          // Preparar datos para Chart3D (opcional)
+          const plotlyData = data.map((item: any) => ({
+            placa: item.PLACA.trim(),
+            fecha: item.FECHA_REGISTRO,
+            posicion: item.POSICION_NEU,
+            codigo: item.CODIGO,
+            remanente: item.REMANENTE,
+          }));
+          setPlotlyData(plotlyData);
+        } catch (e) {
+          setCategories([]);
+          setChartSeries([]);
+          setPlotlyData([]);
+        }
+      };
+      fetchData();
+    }
+  }, [startDate, endDate, user]);
 
   return (
     <Card sx={sx}>
       <CardHeader
         action={
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
             <div style={{ display: 'flex', gap: 8 }}>
               <DatePicker
                 label="Inicio"
@@ -54,14 +160,14 @@ export function Sales({ chartSeries, sx }: SalesProps): React.JSX.Element {
         title="Inspecciones por Neumático"
       />
       <CardContent>
-        <Chart height={350} options={chartOptions} series={chartSeries} type="bar" width="100%" />
+        {/* Gráfico 2D actual */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          {/* Overlay de placas arriba de cada barra */}
+          <BarPlatesOverlay categories={categories} />
+          <Chart height={350} options={{ ...chartOptions, xaxis: { ...chartOptions.xaxis, categories } }} series={chartSeries} type="bar" width="100%" />
+        </div>
       </CardContent>
       <Divider />
-      <CardActions sx={{ justifyContent: 'flex-end' }}>
-        <Button color="inherit" endIcon={<ArrowRightIcon fontSize="var(--icon-fontSize-md)" />} size="small">
-          Overview
-        </Button>
-      </CardActions>
     </Card>
   );
 }
@@ -69,10 +175,40 @@ export function Sales({ chartSeries, sx }: SalesProps): React.JSX.Element {
 function useChartOptions(): ApexOptions {
   const theme = useTheme();
 
+  // Paleta de colores variada tipo Excel
+  const excelColors: string[] = [
+    '#223A57', '#E07A3F', '#A13D3B', '#7DB6C8', '#B7A3C6',
+    '#A6C48A', '#F2C879', '#6B5B95', '#88B04B', '#F7CAC9',
+    '#955251', '#B565A7', '#009B77', '#DD4124', '#45B8AC',
+  ];
+
   return {
-    chart: { background: 'transparent', stacked: false, toolbar: { show: false } },
-    colors: [theme.palette.primary.main, alpha(theme.palette.primary.main, 0.25)],
-    dataLabels: { enabled: false },
+    chart: { background: 'transparent', stacked: true, toolbar: { show: false } },
+    colors: excelColors,
+    dataLabels: {
+      enabled: true,
+      style: {
+        colors: ['#fff'],
+        fontWeight: 700,
+        fontSize: '14px',
+      },
+      dropShadow: {
+        enabled: true,
+        top: 1,
+        left: 1,
+        blur: 1,
+        color: '#222',
+        opacity: 0.5
+      },
+      formatter: function(val, opts) {
+        // Mostrar siempre el remanente en todos los segmentos (si es número y > 0)
+        if (typeof val === 'number' && val > 0) {
+          return val % 1 === 0 ? val.toString() : val.toFixed(2).replace('.00','');
+        }
+        return '';
+      },
+      offsetY: 0, // Cambia el offset para que el remanente quede centrado verticalmente en el segmento
+    },
     fill: { opacity: 1, type: 'solid' },
     grid: {
       borderColor: theme.palette.divider,
@@ -80,22 +216,116 @@ function useChartOptions(): ApexOptions {
       xaxis: { lines: { show: false } },
       yaxis: { lines: { show: true } },
     },
-    legend: { show: false },
-    plotOptions: { bar: { columnWidth: '40px' } },
-    stroke: { colors: ['transparent'], show: true, width: 2 },
+    legend: {
+      show: true,
+      position: 'right',
+      fontSize: '14px',
+      labels: { colors: theme.palette.text.secondary },
+      itemMargin: { vertical: 8 },
+    },
+    plotOptions: {
+      bar: {
+        columnWidth: '55%',
+        borderRadius: 2,
+        dataLabels: {
+          position: 'top', // Placa arriba de la barra
+        },
+      },
+    },
+    stroke: { colors: ['#fff'], show: true, width: 2 },
     theme: { mode: theme.palette.mode },
     xaxis: {
       axisBorder: { color: theme.palette.divider, show: true },
       axisTicks: { color: theme.palette.divider, show: true },
-      categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      labels: { offsetY: 5, style: { colors: theme.palette.text.secondary } },
+      labels: {
+        offsetY: 5,
+        style: { colors: theme.palette.text.secondary, fontWeight: 600, fontSize: '13px' },
+        rotate: 0,
+        rotateAlways: false,
+        trim: false,
+        maxHeight: 60,
+        formatter: (val) => {
+          // Ahora solo se muestra la fecha, así que no es necesario invertir nada
+          return String(val);
+        },
+      },
+      tooltip: { enabled: true },
     },
     yaxis: {
       labels: {
-        formatter: (value) => (value > 0 ? `${value}K` : `${value}`),
+        formatter: (value) => `${value}`,
         offsetX: -10,
-        style: { colors: theme.palette.text.secondary },
+        style: { colors: theme.palette.text.secondary, fontWeight: 600, fontSize: '13px' },
       },
     },
+    tooltip: {
+      y: {
+        formatter: function(val, opts) {
+          // Mostrar placa y kilometraje correspondiente a la barra
+          const placasPorBarra = (window && (window).placasPorBarra) || [];
+          const kilometrosPorBarra = (window && (window).kilometrosPorBarra) || [];
+          const placa = placasPorBarra[opts.dataPointIndex] || '';
+          const km = kilometrosPorBarra[opts.dataPointIndex] || '';
+          return placa && km ? `${placa} | Km: ${km}` : placa || km || '';
+        },
+        title: {
+          formatter: () => '', // No mostrar el nombre de la serie
+        },
+      },
+      x: {
+        show: true,
+        formatter: (val, opts) => {
+          // Mostrar la fecha
+          return String(val);
+        },
+      },
+      shared: false,
+      intersect: true,
+    },
   };
+}
+
+// Overlay de placas arriba de cada barra
+function BarPlatesOverlay({ categories }: { categories: string[] }) {
+  // Obtener placas y kilometrajes en el mismo orden que las barras
+  const placasPorBarra = (typeof window !== 'undefined' && window.placasPorBarra) || [];
+  const kilometrosPorBarra = (typeof window !== 'undefined' && window.kilometrosPorBarra) || [];
+  console.log('Overlay placasPorBarra:', placasPorBarra);
+  console.log('Overlay kilometrosPorBarra:', kilometrosPorBarra);
+  // Renderizar un label por cada barra
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 10,
+      left: 0,
+      width: '100%',
+      height: 0,
+      pointerEvents: 'none',
+      zIndex: 10,
+      display: 'grid',
+      gridTemplateColumns: `repeat(${placasPorBarra.length}, 1fr)`,
+      padding: '0 30px',
+      fontWeight: 700,
+      fontSize: 13,
+      color: '#223A57',
+      textShadow: '0 1px 2px #fff, 0 0 2px #fff',
+    }}>
+      {kilometrosPorBarra.map((km, idx) => (
+        <span key={idx} style={{
+          minWidth: 0,
+          maxWidth: 80,
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          margin: '0 auto',
+        }}>
+          <span style={{ fontWeight: 700 }}>{`Km: ${km}`}</span>
+        </span>
+      ))}
+    </div>
+  );
 }
