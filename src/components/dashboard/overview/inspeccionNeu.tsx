@@ -26,6 +26,8 @@ declare global {
   interface Window {
     placasPorBarra?: string[];
     kilometrosPorBarra?: string[];
+    posicionesPorBarra?: string[];
+    rawInspeccionData?: any[];
   }
 }
 
@@ -110,11 +112,19 @@ export function Sales({ chartSeries: _chartSeries, sx }: SalesProps): React.JSX.
             const maxKm = Math.max(...all.map((item: any) => Number(item.KILOMETRO) || 0));
             return maxKm > 0 ? maxKm.toLocaleString() : all[0].KILOMETRO.toString();
           });
+          // Guardar también las posiciones en el mismo orden de las barras
+          const posicionesPorBarra = xCategories.map(cat => {
+            const [fecha, placa] = cat.split('|');
+            // Busca el primer registro de esa placa en esa fecha
+            const found = groupByFecha[fecha]?.find((item: any) => item.PLACA.trim() === placa);
+            return found ? found.POSICION_NEU : '';
+          });
           setCategories(displayCategories);
           setChartSeries(series);
           // Guardar placas y kilometrajes para usarlas en el overlay
           (window as any).placasPorBarra = placasPorBarra;
           (window as any).kilometrosPorBarra = kilometrosPorBarra;
+          (window as any).posicionesPorBarra = posicionesPorBarra;
           // Preparar datos para Chart3D (opcional)
           const plotlyData = data.map((item: any) => ({
             placa: item.PLACA.trim(),
@@ -124,6 +134,8 @@ export function Sales({ chartSeries: _chartSeries, sx }: SalesProps): React.JSX.
             remanente: item.REMANENTE,
           }));
           setPlotlyData(plotlyData);
+          // Exponer los datos originales para el tooltip
+          (window as any).rawInspeccionData = data;
         } catch (e) {
           setCategories([]);
           setChartSeries([]);
@@ -261,12 +273,28 @@ function useChartOptions(): ApexOptions {
     tooltip: {
       y: {
         formatter: function(val, opts) {
-          // Mostrar placa y kilometraje correspondiente a la barra
+          // Mostrar placa, kilometraje y posición del segmento correcto
           const placasPorBarra = (window && (window).placasPorBarra) || [];
           const kilometrosPorBarra = (window && (window).kilometrosPorBarra) || [];
+          // Buscar el registro correcto usando la data original
+          const rawData = (window && (window).rawInspeccionData) || [];
           const placa = placasPorBarra[opts.dataPointIndex] || '';
           const km = kilometrosPorBarra[opts.dataPointIndex] || '';
-          return placa && km ? `${placa} | Km: ${km}` : placa || km || '';
+          let pos = '';
+          if (rawData && rawData.length) {
+            // Buscar por fecha, placa y serie (posición+codigo)
+            const fecha = opts.w.globals.labels[opts.dataPointIndex];
+            const serieKey = opts.w.globals.seriesNames[opts.seriesIndex];
+            const [posicion, codigo] = serieKey.split(' - ');
+            const found = rawData.find(
+              (item) => item.PLACA.trim() === placa && item.FECHA_REGISTRO === fecha && item.POSICION_NEU === posicion && String(item.CODIGO) === codigo
+            );
+            if (found) pos = found.POSICION_NEU;
+          }
+          let result = placa;
+          if (km) result += ` |${km}km`;
+          if (pos) result += ` | ${pos}`;
+          return result;
         },
         title: {
           formatter: () => '', // No mostrar el nombre de la serie
